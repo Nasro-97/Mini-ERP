@@ -3,8 +3,11 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
-from ..app.core.config import settings
-from ..app.core.database import Base
+from dotenv import load_dotenv
+load_dotenv()
+
+from app.core.config import settings
+from app.core.database import Base
 
 from app import models  # noqa
 

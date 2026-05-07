@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="/config (snapshot).py">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="/config (snapshot).py" />
+              <option name="originalContent" value="from pydantic_settings import BaseSettings&#10;&#10;class Settings(BaseSettings):&#10;    DATABASE_URL: str&#10;    SECRET_KEY: str&#10;    ALGORITHM: str = &quot;HS256&quot;&#10;    ACCESS_TOKEN_EXPIRE_MINUTES: int = 480&#10;&#10;    class Config:&#10;        env_file = &quot;.env&quot;&#10;&#10;settings = Settings()" />
+              <option name="updatedContent" value="from pydantic_settings import BaseSettings&#10;&#10;class Settings(BaseSettings):&#10;    DATABASE_URL: str&#10;    SECRET_KEY: str&#10;    ALGORITHM: str = &quot;HS256&quot;&#10;    ACCESS_TOKEN_EXPIRE_MINUTES: int = 480&#10;&#10;    class Config:&#10;        env_file = &quot;/Users/nasro/Library/Mobile Documents/com~apple~CloudDocs/Al- Zanjabil/ERP System/Mini-ERP/backend/.env&quot;&#10;&#10;settings = Settings()" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
