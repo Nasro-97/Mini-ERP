@@ -4,4 +4,4 @@ from .user_role import UserRole
 
 from .client import Client
 from .supplier import Supplier
-from .contact import Contact
+from .contact import Contact, CompanyType
