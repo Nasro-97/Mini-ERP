@@ -3,8 +3,7 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 from app.core.database import get_db
-from app.schemas import RoleCreate, RoleUpdate
-from app.schemas.role import RoleOut
+from app.schemas import RoleCreate, RoleUpdate, RoleOut
 from app.services import role as role_services
 
 router = APIRouter(prefix="/roles", tags=["Roles"])

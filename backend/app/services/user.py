@@ -11,8 +11,6 @@ from app.core.security import hash_password
 
 #create_user
 def create_user(db: Session, user_data: UserCreate) -> User:
-    print(user_data.password)
-    print(len(user_data.password.encode("utf-8")))
 
     user = User(
         username=user_data.username,
