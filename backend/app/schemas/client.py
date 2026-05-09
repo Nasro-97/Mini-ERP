@@ -1,5 +1,4 @@
 from uuid import UUID
-
 from pydantic import BaseModel, EmailStr, ConfigDict
 
 
@@ -28,6 +27,6 @@ class ClientOut(BaseModel):
     company_name: str
     email: str
     phone_1: str
-    phone_2: str
-    address: str
+    phone_2: str | None= None
+    address: str | None= None
     is_active: bool

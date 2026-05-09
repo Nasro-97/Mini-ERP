@@ -10,7 +10,7 @@ class Client(Base):
     company_name = Column(String(150), nullable=False, unique=True)
     email = Column(String(150), nullable=False, unique=True)
     phone_1 = Column(String(20), nullable=False, unique=True)
-    phone_2 = Column(String(20), nullable=False, unique=True)
+    phone_2 = Column(String(20), unique=True)
     address = Column(String(300))
     is_active = Column(Boolean, nullable=False, default=True)
 

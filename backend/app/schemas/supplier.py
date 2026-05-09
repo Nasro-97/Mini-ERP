@@ -7,7 +7,7 @@ class SupplierCreate(BaseModel):
     company_name : str
     email : EmailStr
     phone_1 : str
-    phone_2 : str
+    phone_2 : str | None = None
     address : str | None = None
 
 #Frontend --> backend Updating supplier
@@ -28,6 +28,6 @@ class SupplierOut(BaseModel):
     company_name: str
     email: str
     phone_1: str
-    phone_2: str
-    address: str
+    phone_2: str | None= None
+    address: str | None= None
     is_active: bool

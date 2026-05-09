@@ -1,7 +1,6 @@
 import uuid
-from sqlalchemy import Column, String, Boolean, DateTime
+from sqlalchemy import Column, String, Boolean, DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql import func
 
 from app.core.database import Base
 
@@ -12,7 +11,7 @@ class Supplier(Base):
     company_name = Column(String(150), nullable=False, unique=True)
     email = Column(String(150), nullable=False, unique=True)
     phone_1 = Column(String(20), nullable=False, unique=True)
-    phone_2 = Column(String(20), nullable=False, unique=True)
+    phone_2 = Column(String(20), unique=True)
     address = Column(String(300))
 
     is_active = Column(Boolean, nullable=False, default=True)

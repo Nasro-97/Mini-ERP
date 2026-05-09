@@ -1,7 +1,7 @@
 from uuid import UUID
 from pydantic import BaseModel, EmailStr, ConfigDict
 
-from app.models.contact import CompanyType
+from app.models import CompanyType
 
 
 # Frontend --> backend when creating contact
@@ -39,6 +39,6 @@ class ContactOut(BaseModel):
     position: str
     email: EmailStr
     phone_1: str
-    phone_2: str
+    phone_2: str | None= None
 
     is_active: bool
