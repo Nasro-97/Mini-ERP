@@ -53,7 +53,7 @@ def get_user_by_id(user_id: UUID, db: Session = Depends(get_db)):
 
 # Update user information route
 @router.patch("/{user_id}", response_model=UserOut, status_code=status.HTTP_200_OK)
-def update_user( user_id:UUID, user_data: UserUpdate, db: Session = Depends(get_db), current_user = Depends(required_roles(["COD"]))):
+def update_user( user_id:UUID, user_data: UserUpdate, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     # Is the user editing their own account?
     is_self_update = current_user.id == user_id
 
@@ -61,7 +61,7 @@ def update_user( user_id:UUID, user_data: UserUpdate, db: Session = Depends(get_
     is_cod = "COD" in current_user_roles
 
     # Only COD can update someone's else info
-    if not is_cod or not is_self_update:
+    if not is_cod and not is_self_update:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You do not have permission to update this user",

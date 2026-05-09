@@ -14,7 +14,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 bearer_scheme = HTTPBearer()
 
-# get the loged in user token
+# get the logged-in user token
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),db: Session = Depends(get_db)):
 
     token = credentials.credentials

@@ -28,6 +28,26 @@ def get_clients(db: Session = Depends(get_db)):
     return client_service.get_clients(db)
 
 
+#deactivate and activate are only possible by the roles : "COD", "Sales Manager", "Procurement Manager"
+@router.patch("/{client_id}/deactivate", status_code=status.HTTP_200_OK, response_model=ClientOut)
+def deactivate_company(client_id: UUID, db: Session = Depends(get_db), current_user=Depends(required_roles(allowed_roles))):
+    client = client_service.deactivate_client(db, client_id)
+    if client is None:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    return client
+
+
+# activate and activate are only possible by the roles : "COD", "Sales Manager", "Procurement Manager"
+@router.patch("/{client_id}/activate", status_code=status.HTTP_200_OK, response_model=ClientOut)
+def activate_company(client_id, db: Session = Depends(get_db), current_user=Depends(required_roles(allowed_roles))):
+    client = client_service.activate_client(db, client_id)
+    if client is None:
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    return client
+
+
 @router.patch("/{client_id}", status_code=status.HTTP_200_OK, response_model=ClientOut)
 def update_client(client_id: UUID, client_data: ClientUpdate, db: Session = Depends(get_db),
                   current_user=Depends(required_roles(allowed_roles))):
@@ -39,24 +59,7 @@ def update_client(client_id: UUID, client_data: ClientUpdate, db: Session = Depe
     return client
 
 
-#deactivate and activate are only possible by the roles : "COD", "Sales Manager", "Procurement Manager"
-@router.patch("/{client_id}/deactivate", status_code=status.HTTP_200_OK, response_model=ClientOut)
-def deactivate_company(company_id: UUID, db: Session = Depends(get_db), current_user=Depends(required_roles(allowed_roles))):
-    client = client_service.deactivate_client(db, company_id)
-    if client is None:
-        raise HTTPException(status_code=404, detail="Client not found")
 
-    return client
-
-
-# activate and activate are only possible by the roles : "COD", "Sales Manager", "Procurement Manager"
-@router.patch("/{client_id}/activate", status_code=status.HTTP_200_OK, response_model=ClientOut)
-def activate_company(company_id, db: Session = Depends(get_db), current_user=Depends(required_roles(allowed_roles))):
-    client = client_service.activate_client(db, company_id)
-    if client is None:
-        raise HTTPException(status_code=404, detail="Client not found")
-
-    return client
 
 @router.get("/{client_id}", status_code=status.HTTP_200_OK, response_model=ClientOut)
 def get_company_by_id(client_id: UUID, db: Session = Depends(get_db)):

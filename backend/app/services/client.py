@@ -59,7 +59,7 @@ def update_client(db: Session, client_data: ClientUpdate, client_id: UUID) -> Cl
     for field, value in updated_data.items():
         setattr(client, field, value)
 
-    db.close()
+    db.commit()
     db.refresh(client)
 
     return client
@@ -74,7 +74,7 @@ def deactivate_client(db: Session, client_id: UUID) -> Client | None:
 
     client.is_active = False
 
-    db.close()
+    db.commit()
     db.refresh(client)
 
     return client
@@ -89,7 +89,7 @@ def activate_client(db: Session, client_id: UUID) -> Client | None:
 
     client.is_active = True
 
-    db.close()
+    db.commit()
     db.refresh(client)
 
     return client

@@ -59,7 +59,7 @@ def update_supplier(db: Session, supplier_data: SupplierUpdate, supplier_id: UUI
     for field, value in updated_data.items():
         setattr(supplier, field, value)
 
-    db.close()
+    db.commit()
     db.refresh(supplier)
 
     return supplier

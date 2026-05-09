@@ -73,12 +73,7 @@ def deactivate_supplier(
 
 
 @router.patch("/{supplier_id}/activate", status_code=status.HTTP_200_OK, response_model=SupplierOut)
-def activate_supplier(
-    supplier_id: UUID,
-    db: Session = Depends(get_db),
-    current_user=Depends(required_roles(allowed_roles)),
-):
-    # Reactivate supplier by setting is_active = True
+def activate_supplier( supplier_id: UUID, db: Session = Depends(get_db), current_user=Depends(required_roles(allowed_roles))):
     supplier = supplier_service.activate_supplier(db, supplier_id)
 
     if supplier is None:
@@ -91,11 +86,7 @@ def activate_supplier(
 
 
 @router.get("/{supplier_id}", status_code=status.HTTP_200_OK, response_model=SupplierOut)
-def get_supplier_by_id(
-    supplier_id: UUID,
-    db: Session = Depends(get_db),
-):
-    # Find supplier by ID
+def get_supplier_by_id( supplier_id: UUID, db: Session = Depends(get_db)):
     supplier = supplier_service.get_supplier_by_id(db, supplier_id)
 
     if supplier is None:
