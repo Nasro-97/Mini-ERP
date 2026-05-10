@@ -43,8 +43,7 @@ def get_roles(db: Session) -> list[Role]:
 # update role
 def update_role(db: Session, role_id: UUID, role_data: RoleUpdate) -> Role| None:
 
-    statement = select(Role).where(Role.id == role_id)
-    role = db.execute(statement).scalar_one_or_none()
+    role = get_role_by_id(db, role_id)
 
     if role is None: return None
 

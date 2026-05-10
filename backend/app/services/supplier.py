@@ -49,8 +49,7 @@ def get_suppliers(db: Session) -> list[Supplier]:
 
 # Update supplier
 def update_supplier(db: Session, supplier_data: SupplierUpdate, supplier_id: UUID) -> Supplier | None:
-    statement = select(Supplier).where(Supplier.id == supplier_id)
-    supplier = db.execute(statement).scalar_one_or_none()
+    supplier = get_supplier_by_id(db, supplier_id)
 
     if supplier is None: return None
 
@@ -67,8 +66,7 @@ def update_supplier(db: Session, supplier_data: SupplierUpdate, supplier_id: UUI
 
 # Deactivate supplier
 def deactivate_supplier(db: Session, supplier_id: UUID) -> Supplier | None:
-    statement = select(Supplier).where(Supplier.id == supplier_id)
-    supplier = db.execute(statement).scalar_one_or_none()
+    supplier = supplier = get_supplier_by_id(db, supplier_id)
 
     if supplier is None: return None
 
@@ -82,8 +80,7 @@ def deactivate_supplier(db: Session, supplier_id: UUID) -> Supplier | None:
 
 # Activate supplier
 def activate_supplier(db: Session, supplier_id: UUID) -> Supplier | None:
-    statement = select(Supplier).where(Supplier.id == supplier_id)
-    supplier = db.execute(statement).scalar_one_or_none()
+    supplier = supplier = get_supplier_by_id(db, supplier_id)
 
     if supplier is None: return None
 

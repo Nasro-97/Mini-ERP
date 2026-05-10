@@ -7,6 +7,8 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.client import router as client_router
 from app.api.v1.supplier import router as supplier_router
 from app.api.v1.contact import router as contact_router
+from app.api.v1.request import router as request_router
+from app.api.v1.item import router as item_router
 
 
 app = FastAPI(
@@ -36,3 +38,6 @@ app.include_router(auth_router)
 app.include_router(client_router)
 app.include_router(supplier_router)
 app.include_router(contact_router)
+
+app.include_router(request_router)
+app.include_router(item_router)

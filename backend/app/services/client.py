@@ -49,8 +49,7 @@ def get_clients(db: Session) -> list[Client]:
 
 # Update Client
 def update_client(db: Session, client_data: ClientUpdate, client_id: UUID) -> Client | None:
-    statement = select(Client).where(Client.id == client_id)
-    client = db.execute(statement).scalar_one_or_none()
+    client = get_client_by_id(db, client_id)
 
     if client is None: return None
 
@@ -67,8 +66,7 @@ def update_client(db: Session, client_data: ClientUpdate, client_id: UUID) -> Cl
 
 # Deactivate client
 def deactivate_client(db: Session, client_id: UUID) -> Client | None:
-    statement = select(Client).where(Client.id == client_id)
-    client = db.execute(statement).scalar_one_or_none()
+    client = get_client_by_id(db, client_id)
 
     if client is None: return None
 
@@ -82,8 +80,7 @@ def deactivate_client(db: Session, client_id: UUID) -> Client | None:
 
 # Activate client
 def activate_client(db: Session, client_id: UUID) -> Client | None:
-    statement = select(Client).where(Client.id == client_id)
-    client = db.execute(statement).scalar_one_or_none()
+    client = get_client_by_id(db, client_id)
 
     if client is None: return None
 

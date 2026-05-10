@@ -1,6 +1,5 @@
 import enum
 import uuid
-from tkinter import Text
 
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column, String, DateTime, func, ForeignKey, Enum, Integer, Text

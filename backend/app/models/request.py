@@ -12,7 +12,7 @@ class RequestStatus(str, enum.Enum):
     DRAFT = "draft"
     PENDING_SALES_MANAGER_APPROVAL = "pending_sales_manager_approval"
     APPROVED_FOR_SOURCING = "approved_for_sourcing"
-    REJECTED = "rejected"
+    REJECTED = "rejected" 
     RFQ_IN_PROGRESS = "rfq_in_progress"
     QUOTATION_REVIEW = "quotation_review"
     OFFER_IN_PROGRESS = "offer_in_progress"

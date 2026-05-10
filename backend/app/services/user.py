@@ -66,9 +66,7 @@ def get_users(db: Session) -> list[User]:
 
 #update_user
 def update_user(db: Session, user_data: UserUpdate, user_id:UUID) -> User | None:
-
-    statement = select(User).where(User.id == user_id)
-    user = db.execute(statement).scalar_one_or_none()
+    user = get_user_by_id(db, user_id)
 
     if user is None: return None
 

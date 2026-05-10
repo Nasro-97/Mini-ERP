@@ -3,6 +3,7 @@ from pydantic import BaseModel, ConfigDict
 from datetime import datetime
 
 from app.models import RequestStatus, RequestPriority
+from app.schemas.item import ItemOutput
 
 #Frontend --> backend Creating
 class RequestCreate(BaseModel):
@@ -29,7 +30,7 @@ class RequestCreate(BaseModel):
 
 # Frontend --> backend updating request
 class RequestUpdate(BaseModel):
-    request_number: str | None = None
+
     title: str | None = None
     description: str | None = None
     client_reference: str | None = None
@@ -38,7 +39,6 @@ class RequestUpdate(BaseModel):
     assigned_to_user_id: UUID | None = None
     sales_manager_id: UUID | None = None
 
-    status: RequestStatus | None = None
     priority: RequestPriority | None = None
 
     request_date: datetime | None = None
@@ -46,11 +46,11 @@ class RequestUpdate(BaseModel):
     deadline: datetime | None = None
 
     sales_manager_notes: str | None = None
-    sales_manager_decision_at: datetime | None = None
 
     notes: str | None = None
 
-# backend --> Frontend
+
+# Backend --> frontend
 class RequestOutput(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -76,3 +76,9 @@ class RequestOutput(BaseModel):
     sales_manager_decision_at: datetime | None = None
 
     notes: str | None = None
+
+
+# Backend --> frontend request with items attached
+class RequestWithItems(RequestOutput):
+
+    items: list[ItemOutput] = []
