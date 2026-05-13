@@ -1,7 +1,7 @@
 from datetime import datetime, UTC
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.orm import Session
 
 from app.models import Request, User, Item
@@ -58,7 +58,6 @@ def create_request(db: Session, request_data: RequestCreate, current_user: User)
         client_id = request_data.client_id,
         created_by_user_id=current_user.id,
         assigned_to_user_id=current_user.id,
-        sales_manager_id = request_data.sales_manager_id,
 
         priority = request_data.priority,
 
@@ -85,18 +84,36 @@ def get_request_by_id(db: Session, request_id: UUID) -> Request | None:
 
 
 # filters by status, client, assigned user
-def get_requests(db: Session, current_user: User) -> list[Request]:
+def get_requests(db: Session, current_user: User, status_filter :RequestStatus | None = None) -> list[Request]:
     role_names = [role.name for role in current_user.roles]
+
     statement = select(Request)
 
-    if any(role in role_names for role in ["Sales Manager", "COD"]):
-        return list(db.execute(statement).scalars().all())
+    if "COD" in role_names:
+        pass  # sees everything, no filter
 
-    if "Procurement Manager" in role_names:
-        statement = statement.where(Request.status.in_(PROCUREMENT_VISIBLE_STATUSES))
-        return list(db.execute(statement).scalars().all())
+    elif "Sales Manager" in role_names:
+        statement = statement.where(or_(Request.sales_manager_id == current_user.id,Request.sales_manager_id.is_(None)))
 
-    statement = select(Request).where(Request.assigned_to_user_id == current_user.id)
+
+    elif "Procurement Manager" in role_names:
+
+        statement = statement.where( Request.status.in_(PROCUREMENT_VISIBLE_STATUSES)).where(
+            or_( Request.procurement_assigned_to_id == current_user.id,Request.procurement_assigned_to_id.is_(None)))
+
+
+    elif "Procurement Specialist" in role_names:
+
+        statement = statement.where( Request.status.in_(PROCUREMENT_VISIBLE_STATUSES)).where(Request.procurement_assigned_to_id == current_user.id)
+
+    else:
+        # Sales Specialist or anyone else
+        statement = statement.where( Request.assigned_to_user_id == current_user.id)
+
+    if status_filter:
+        statement = statement.where(Request.status == status_filter)
+
+
     return list(db.execute(statement).scalars().all())
 
 
@@ -150,7 +167,7 @@ def submit_for_review(db: Session, request_id: UUID) -> Request | None:
 
 
 #  PENDING_SALES_MANAGER_APPROVAL ->  APPROVED_FOR_SOURCING
-def approve_request(db: Session, request_id: UUID, notes: str | None) -> Request | None:
+def approve_request(db: Session, request_id: UUID, current_user: User,notes: str | None) -> Request | None:
     request = get_request_by_id(db, request_id)
 
     if request is None:
@@ -159,6 +176,7 @@ def approve_request(db: Session, request_id: UUID, notes: str | None) -> Request
     if request.status != RequestStatus.PENDING_SALES_MANAGER_APPROVAL:
         return None
 
+    request.sales_manager_id = current_user.id
     request.status = RequestStatus.APPROVED_FOR_SOURCING
     request.sales_manager_notes = notes
     request.sales_manager_decision_at = datetime.now(UTC)
@@ -169,7 +187,7 @@ def approve_request(db: Session, request_id: UUID, notes: str | None) -> Request
     return request
 
 
-def reject_request(db: Session, request_id: UUID, notes: str) -> Request | None:
+def reject_request(db: Session, request_id: UUID,current_user: User, notes: str) -> Request | None:
     request = get_request_by_id(db, request_id)
 
     if request is None:
@@ -178,6 +196,7 @@ def reject_request(db: Session, request_id: UUID, notes: str) -> Request | None:
     if request.status != RequestStatus.PENDING_SALES_MANAGER_APPROVAL:
         return None
 
+    request.sales_manager_id = current_user.id
     request.status = RequestStatus.REJECTED
     request.sales_manager_notes = notes
     request.sales_manager_decision_at = datetime.now(UTC)

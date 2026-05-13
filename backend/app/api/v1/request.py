@@ -70,7 +70,7 @@ def submit_for_review( request_id: UUID, db: Session = Depends(get_db), current_
 # Approve request
 @router.patch("/{request_id}/approve", response_model=RequestOutput, status_code=status.HTTP_200_OK)
 def approve_request( request_id: UUID, notes: str | None = None, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Manager"]))):
-    request = request_service.approve_request(db, request_id, notes)
+    request = request_service.approve_request(db, request_id, current_user, notes)
     if request is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -82,7 +82,7 @@ def approve_request( request_id: UUID, notes: str | None = None, db: Session = D
 # Reject request
 @router.patch("/{request_id}/reject", response_model=RequestOutput, status_code=status.HTTP_200_OK)
 def reject_request( request_id: UUID, notes: str, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Manager"]))):
-    request = request_service.reject_request(db, request_id, notes)
+    request = request_service.reject_request(db, request_id, current_user, notes)
     if request is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
