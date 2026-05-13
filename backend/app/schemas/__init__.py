@@ -6,4 +6,6 @@ from .supplier import SupplierCreate, SupplierUpdate, SupplierOut
 from .contact import ContactCreate, ContactUpdate, ContactOut
 
 from .request import RequestCreate, RequestUpdate, RequestOutput, RequestWithItems, RequestStatus
+
 from .item import ItemCreate, ItemUpdate, ItemOutput
+from .rfq import RFQCreate, RFQUpdate, RFQOutput
