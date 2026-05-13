@@ -14,6 +14,7 @@ class RequestCreate(BaseModel):
 
     client_id: UUID
     assigned_to_user_id: UUID | None = None
+    procurement_assigned_to_id: UUID | None = None
     sales_manager_id: UUID | None = None
 
     priority: RequestPriority = RequestPriority.LOW
@@ -37,6 +38,7 @@ class RequestUpdate(BaseModel):
 
     client_id: UUID | None = None
     assigned_to_user_id: UUID | None = None
+    procurement_assigned_to_id: UUID | None = None
     sales_manager_id: UUID | None = None
 
     priority: RequestPriority | None = None
@@ -63,6 +65,7 @@ class RequestOutput(BaseModel):
     client_id: UUID
     created_by_user_id: UUID
     assigned_to_user_id: UUID | None = None
+    procurement_assigned_to_id: UUID | None = None
     sales_manager_id: UUID | None = None
 
     status: RequestStatus

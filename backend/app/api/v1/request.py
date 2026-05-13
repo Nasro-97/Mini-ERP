@@ -91,6 +91,24 @@ def reject_request( request_id: UUID, notes: str, db: Session = Depends(get_db),
     return request
 
 
+@router.patch("/{request_id}/assign-procurement", response_model=RequestOutput, status_code=status.HTTP_200_OK)
+def assign_procurement(
+    request_id: UUID,
+    assigned_user_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(required_roles(["Procurement Manager"]))
+):
+    request = request_service.assign_procurement(db, request_id, assigned_user_id, current_user)
+
+    if request is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request not found, not in APPROVED_FOR_SOURCING status, or assigned user does not have a procurement role"
+        )
+
+    return request
+
+
 # Delete request — only if DRAFT
 @router.delete("/{request_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_request( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager"]))):

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Request, User, Item
 from app.schemas import RequestCreate, RequestUpdate, RequestStatus
+from app.services.user import get_user_by_id
 
 
 PROCUREMENT_VISIBLE_STATUSES = [
@@ -115,7 +116,8 @@ def update_request(db: Session, request_id: UUID, request_data: RequestUpdate) -
 
     return request
 
-# return the request with it's items
+
+# return the request with its items
 def get_request_with_items(db: Session, request_id: UUID) -> Request | None:
     request = get_request_by_id(db, request_id)
 
@@ -199,6 +201,38 @@ def delete_request(db: Session, request_id: UUID) -> bool:
     db.commit()
 
     return True
+
+
+# Assigning a procurement user to handle the procurement part of the request
+def assign_procurement(db: Session, request_id: UUID, assigned_user_id: UUID, current_user: User) -> Request | None:
+
+    request = get_request_by_id(db, request_id)
+
+    if request is None:
+        return None
+
+    if request.status != RequestStatus.APPROVED_FOR_SOURCING:
+        return None
+
+    role_names = [role.name for role in current_user.roles]
+    if "Procurement Manager" not in  role_names:
+        return None
+
+    assigned_user = get_user_by_id(db, assigned_user_id)
+    if assigned_user is None:
+        return None
+
+    assigned_user_roles = [role.name for role in assigned_user.roles]
+    if "Procurement Manager" not in assigned_user_roles and "Procurement Specialist" not in assigned_user_roles:
+        return None
+
+    request.procurement_assigned_to_id = assigned_user_id
+    request.status = RequestStatus.RFQ_IN_PROGRESS
+
+    db.commit()
+    db.refresh(request)
+    return request
+
 
 
 

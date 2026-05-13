@@ -818,3 +818,112 @@ def test_specialist_only_sees_own_requests():
 
     for req in data:
         assert req["assigned_to_user_id"] == specialist_id
+
+def get_valid_procurement_manager_token() -> str:
+    return login("procurement.manager@example.com", "123456")
+
+
+def get_approved_for_sourcing_request_id(specialist_token: str, manager_token: str, client_id: str) -> str:
+    # Creates a request and takes it all the way to approved_for_sourcing
+    create_response = client.post(
+        "/requests/",
+        headers=auth_headers(specialist_token),
+        json=create_request_payload(
+            client_id=client_id,
+            title_prefix="procurement_test_request",
+            client_ref="PROC-REF-001",
+            priority="high",
+        ),
+    )
+
+    assert create_response.status_code == 201, create_response.json()
+    request_id = create_response.json()["id"]
+
+    submit_response = client.patch(
+        f"/requests/{request_id}/submit",
+        headers=auth_headers(specialist_token),
+    )
+    assert submit_response.status_code == 200, submit_response.json()
+
+    approve_response = client.patch(
+        f"/requests/{request_id}/approve",
+        headers=auth_headers(manager_token),
+        params={"notes": "Approved for sourcing"},
+    )
+    assert approve_response.status_code == 200, approve_response.json()
+    assert approve_response.json()["status"] == "approved_for_sourcing"
+
+    return request_id
+
+
+def test_assign_procurement():
+    specialist_token = get_valid_sales_specialist_token()
+    manager_token = get_valid_sales_manager_token()
+    procurement_manager_token = get_valid_procurement_manager_token()
+    cod_token = login_as_cod()
+
+    client_id = get_valid_client_id(cod_token)
+
+    # ---------- Get procurement manager user id ----------
+    me_response = client.get(
+        "/users/me",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert me_response.status_code == 200, me_response.json()
+    procurement_manager_id = me_response.json()["id"]
+
+    # ---------- Create a request and bring it to approved_for_sourcing ----------
+    request_id = get_approved_for_sourcing_request_id(
+        specialist_token, manager_token, client_id
+    )
+
+    # ---------- Sales specialist cannot assign procurement ----------
+    blocked_response = client.patch(
+        f"/requests/{request_id}/assign-procurement",
+        headers=auth_headers(specialist_token),
+        params={"assigned_user_id": procurement_manager_id},
+    )
+    assert blocked_response.status_code == 403, blocked_response.json()
+
+    # ---------- Sales manager cannot assign procurement ----------
+    blocked_response_2 = client.patch(
+        f"/requests/{request_id}/assign-procurement",
+        headers=auth_headers(manager_token),
+        params={"assigned_user_id": procurement_manager_id},
+    )
+    assert blocked_response_2.status_code == 403, blocked_response_2.json()
+
+    # ---------- Procurement manager assigns himself ----------
+    assign_response = client.patch(
+        f"/requests/{request_id}/assign-procurement",
+        headers=auth_headers(procurement_manager_token),
+        params={"assigned_user_id": procurement_manager_id},
+    )
+    assert assign_response.status_code == 200, assign_response.json()
+    assert assign_response.json()["status"] == "rfq_in_progress"
+    assert assign_response.json()["procurement_assigned_to_id"] == procurement_manager_id
+
+    # ---------- Cannot assign again once already rfq_in_progress ----------
+    reassign_response = client.patch(
+        f"/requests/{request_id}/assign-procurement",
+        headers=auth_headers(procurement_manager_token),
+        params={"assigned_user_id": procurement_manager_id},
+    )
+    assert reassign_response.status_code == 400, reassign_response.json()
+
+    # ---------- Cannot assign a sales user to procurement ----------
+    specialist_id = client.get(
+        "/users/me",
+        headers=auth_headers(specialist_token),
+    ).json()["id"]
+
+    request_id_2 = get_approved_for_sourcing_request_id(
+        specialist_token, manager_token, client_id
+    )
+
+    wrong_role_response = client.patch(
+        f"/requests/{request_id_2}/assign-procurement",
+        headers=auth_headers(procurement_manager_token),
+        params={"assigned_user_id": specialist_id},
+    )
+    assert wrong_role_response.status_code == 400, wrong_role_response.json()
