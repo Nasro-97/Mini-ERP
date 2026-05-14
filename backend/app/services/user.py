@@ -31,8 +31,6 @@ def create_user(db: Session, user_data: UserCreate) -> User:
         )
         db.add(user_role)
 
-
-
     db.commit()
     db.refresh(user)
 

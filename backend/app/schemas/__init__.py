@@ -9,3 +9,4 @@ from .request import RequestCreate, RequestUpdate, RequestOutput, RequestWithIte
 
 from .item import ItemCreate, ItemUpdate, ItemOutput
 from .rfq import RFQCreate, RFQUpdate, RFQOutput
+from .quotation import QuotationCreate, QuotationUpdate, QuotationOutput

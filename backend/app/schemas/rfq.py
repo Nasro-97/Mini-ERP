@@ -11,7 +11,6 @@ class RFQCreate(BaseModel):
     supplier_id: UUID
     contact_id: UUID | None = None
 
-
     notes: str | None = None
     response_deadline: datetime
 
