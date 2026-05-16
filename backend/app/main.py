@@ -9,6 +9,8 @@ from app.api.v1.supplier import router as supplier_router
 from app.api.v1.contact import router as contact_router
 from app.api.v1.request import router as request_router
 from app.api.v1.item import router as item_router
+from app.api.v1.rfq import router as rfq_router
+from app.api.v1.quotation import router as quotation_router
 
 
 app = FastAPI(
@@ -41,3 +43,6 @@ app.include_router(contact_router)
 
 app.include_router(request_router)
 app.include_router(item_router)
+
+app.include_router(rfq_router)
+app.include_router(quotation_router)

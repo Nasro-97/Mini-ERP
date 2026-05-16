@@ -12,6 +12,7 @@ class QuotationStatus(str, enum.Enum):
     UNDER_REVIEW     = "under_review"
     SELECTED         = "selected"
     REJECTED         = "rejected"
+    SUPERSEDED       = "superseded"
 
 
 class Quotation(Base):
@@ -21,6 +22,7 @@ class Quotation(Base):
     rfq_id = Column(UUID(as_uuid=True), ForeignKey("rfqs.id", ondelete="CASCADE"), nullable=False)
     supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id", ondelete="RESTRICT"), nullable=False)
 
+    quotation_number = Column(String(100), nullable=False, unique=True)
     status = Column(Enum(QuotationStatus), nullable=False, default=QuotationStatus.RECEIVED)
 
     # pricing

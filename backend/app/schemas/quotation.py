@@ -41,6 +41,7 @@ class QuotationOutput(BaseModel):
     id: UUID
     rfq_id: UUID
     supplier_id: UUID
+    quotation_number: str
     status: QuotationStatus
     currency: str
     subtotal: Decimal

@@ -13,6 +13,18 @@ client = TestClient(app)
 # HELPERS
 # =====================================================
 
+def cleanup_test_users():
+    token = login_as_cod()
+    response = client.get("/users/", headers=auth_headers(token))
+    assert response.status_code == 200
+    users = response.json()
+    for user in users:
+        if user["username"].startswith("test_user_"):
+            client.patch(
+                f"/users/{user['id']}/deactivate",
+                headers=auth_headers(token),
+            )
+
 def unique_value(prefix: str) -> str:
     # Creates unique strings so tests can run multiple times
     return f"{prefix}_{datetime.now().timestamp()}".replace(".", "_")
@@ -819,6 +831,7 @@ def test_specialist_only_sees_own_requests():
     for req in data:
         assert req["assigned_to_user_id"] == specialist_id
 
+
 def get_valid_procurement_manager_token() -> str:
     return login("procurement.manager@example.com", "123456")
 
@@ -927,3 +940,603 @@ def test_assign_procurement():
         params={"assigned_user_id": specialist_id},
     )
     assert wrong_role_response.status_code == 400, wrong_role_response.json()
+
+def get_valid_procurement_manager_token() -> str:
+    return login("procurement.manager@example.com", "123456")
+
+
+def get_valid_procurement_specialist_token() -> str:
+    return login("procurement.specialist@example.com", "123456")
+
+
+def get_valid_supplier_id(token: str) -> str:
+    response = client.get("/suppliers/", headers=auth_headers(token))
+    assert response.status_code == 200, response.json()
+    suppliers = response.json()
+    assert len(suppliers) > 0, "No suppliers found — create one first"
+    return suppliers[0]["id"]
+
+
+def create_rfq_in_progress_request(specialist_token: str, manager_token: str, procurement_manager_token: str, client_id: str) -> str:
+    # Creates a request and brings it all the way to RFQ_IN_PROGRESS
+    create_response = client.post(
+        "/requests/",
+        headers=auth_headers(specialist_token),
+        json=create_request_payload(
+            client_id=client_id,
+            title_prefix="rfq_test_request",
+            client_ref=unique_value("RFQ-REF"),
+            priority="high",
+        ),
+    )
+    assert create_response.status_code == 201, create_response.json()
+    request_id = create_response.json()["id"]
+
+    client.patch(
+        f"/requests/{request_id}/submit",
+        headers=auth_headers(specialist_token),
+    )
+
+    client.patch(
+        f"/requests/{request_id}/approve",
+        headers=auth_headers(manager_token),
+        params={"notes": "Approved"},
+    )
+
+    pm_id = client.get(
+        "/users/me",
+        headers=auth_headers(procurement_manager_token),
+    ).json()["id"]
+
+    client.patch(
+        f"/requests/{request_id}/assign-procurement",
+        headers=auth_headers(procurement_manager_token),
+        params={"assigned_user_id": pm_id},
+    )
+
+    return request_id
+
+
+# =====================================================
+# RFQ TESTS
+# =====================================================
+
+def test_rfq_full_flow():
+    specialist_token = get_valid_sales_specialist_token()
+    manager_token = get_valid_sales_manager_token()
+    procurement_manager_token = get_valid_procurement_manager_token()
+    cod_token = login_as_cod()
+
+    client_id = get_valid_client_id(cod_token)
+    supplier_id = get_valid_supplier_id(cod_token)
+
+    request_id = create_rfq_in_progress_request(
+        specialist_token, manager_token, procurement_manager_token, client_id
+    )
+
+    # ---------- Sales specialist cannot create RFQ ----------
+    blocked_rfq = client.post(
+        "/rfqs/",
+        headers=auth_headers(specialist_token),
+        json={
+            "request_id": request_id,
+            "supplier_id": supplier_id,
+            "notes": "Test RFQ",
+            "response_deadline": "2026-12-31T00:00:00",
+        },
+    )
+    assert blocked_rfq.status_code == 403, blocked_rfq.json()
+
+    # ---------- Procurement manager creates RFQ ----------
+    create_rfq_response = client.post(
+        "/rfqs/",
+        headers=auth_headers(procurement_manager_token),
+        json={
+            "request_id": request_id,
+            "supplier_id": supplier_id,
+            "notes": "Please provide best quotation",
+            "response_deadline": "2026-12-31T00:00:00",
+        },
+    )
+    assert create_rfq_response.status_code == 201, create_rfq_response.json()
+
+    rfq_data = create_rfq_response.json()
+    rfq_id = rfq_data["id"]
+
+    assert rfq_data["status"] == "draft"
+    assert rfq_data["request_id"] == request_id
+    assert rfq_data["supplier_id"] == supplier_id
+    assert "RFQ-1" in rfq_data["rfq_number"]
+
+    # ---------- Get RFQ by id ----------
+    get_rfq_response = client.get(
+        f"/rfqs/{rfq_id}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert get_rfq_response.status_code == 200, get_rfq_response.json()
+    assert get_rfq_response.json()["id"] == rfq_id
+
+    # ---------- Get RFQs by request ----------
+    get_rfqs_response = client.get(
+        f"/rfqs/request/{request_id}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert get_rfqs_response.status_code == 200, get_rfqs_response.json()
+    assert len(get_rfqs_response.json()) == 1
+
+    # ---------- Update RFQ ----------
+    update_rfq_response = client.patch(
+        f"/rfqs/{rfq_id}",
+        headers=auth_headers(procurement_manager_token),
+        json={"notes": "Updated notes"},
+    )
+    assert update_rfq_response.status_code == 200, update_rfq_response.json()
+    assert update_rfq_response.json()["notes"] == "Updated notes"
+
+    # ---------- Generate mailto ----------
+    mailto_response = client.post(
+        f"/rfqs/{rfq_id}/generate-mailto",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert mailto_response.status_code == 200, mailto_response.json()
+
+    mailto_data = mailto_response.json()
+    assert "to" in mailto_data
+    assert "subject" in mailto_data
+    assert "body" in mailto_data
+    assert "cc" in mailto_data
+
+    # ---------- RFQ status is now SENT ----------
+    get_sent_rfq = client.get(
+        f"/rfqs/{rfq_id}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert get_sent_rfq.json()["status"] == "sent"
+
+    # ---------- Cannot update after sent ----------
+    blocked_update = client.patch(
+        f"/rfqs/{rfq_id}",
+        headers=auth_headers(procurement_manager_token),
+        json={"notes": "Should not work"},
+    )
+    assert blocked_update.status_code == 400, blocked_update.json()
+
+    # ---------- Cannot generate mailto again ----------
+    blocked_mailto = client.post(
+        f"/rfqs/{rfq_id}/generate-mailto",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert blocked_mailto.status_code == 400, blocked_mailto.json()
+
+    return rfq_id, request_id
+
+
+def test_rfq_decline_closes_request():
+    specialist_token = get_valid_sales_specialist_token()
+    manager_token = get_valid_sales_manager_token()
+    procurement_manager_token = get_valid_procurement_manager_token()
+    cod_token = login_as_cod()
+
+    client_id = get_valid_client_id(cod_token)
+    supplier_id = get_valid_supplier_id(cod_token)
+
+    request_id = create_rfq_in_progress_request(
+        specialist_token, manager_token, procurement_manager_token, client_id
+    )
+
+    # ---------- Create and send RFQ ----------
+    rfq_response = client.post(
+        "/rfqs/",
+        headers=auth_headers(procurement_manager_token),
+        json={
+            "request_id": request_id,
+            "supplier_id": supplier_id,
+            "response_deadline": "2026-12-31T00:00:00",
+        },
+    )
+    assert rfq_response.status_code == 201, rfq_response.json()
+    rfq_id = rfq_response.json()["id"]
+
+    client.post(
+        f"/rfqs/{rfq_id}/generate-mailto",
+        headers=auth_headers(procurement_manager_token),
+    )
+
+    # ---------- Decline the RFQ ----------
+    decline_response = client.patch(
+        f"/rfqs/{rfq_id}/decline",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert decline_response.status_code == 200, decline_response.json()
+    assert decline_response.json()["status"] == "declined"
+
+    # ---------- Request should now be CLOSED ----------
+    request_response = client.get(
+        f"/requests/{request_id}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert request_response.status_code == 200, request_response.json()
+    assert request_response.json()["status"] == "closed"
+
+
+def test_rfq_delete_only_when_draft():
+    specialist_token = get_valid_sales_specialist_token()
+    manager_token = get_valid_sales_manager_token()
+    procurement_manager_token = get_valid_procurement_manager_token()
+    cod_token = login_as_cod()
+
+    client_id = get_valid_client_id(cod_token)
+    supplier_id = get_valid_supplier_id(cod_token)
+
+    request_id = create_rfq_in_progress_request(
+        specialist_token, manager_token, procurement_manager_token, client_id
+    )
+
+    # ---------- Create RFQ ----------
+    rfq_response = client.post(
+        "/rfqs/",
+        headers=auth_headers(procurement_manager_token),
+        json={
+            "request_id": request_id,
+            "supplier_id": supplier_id,
+            "response_deadline": "2026-12-31T00:00:00",
+        },
+    )
+    rfq_id = rfq_response.json()["id"]
+
+    # ---------- Delete while draft ----------
+    delete_response = client.delete(
+        f"/rfqs/{rfq_id}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert delete_response.status_code == 204
+
+    # ---------- Confirm gone ----------
+    get_response = client.get(
+        f"/rfqs/{rfq_id}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert get_response.status_code == 404, get_response.json()
+
+
+def test_procurement_specialist_can_create_rfq_on_assigned_request():
+    specialist_token = get_valid_sales_specialist_token()
+    manager_token = get_valid_sales_manager_token()
+    procurement_manager_token = get_valid_procurement_manager_token()
+    procurement_specialist_token = get_valid_procurement_specialist_token()
+    cod_token = login_as_cod()
+
+    client_id = get_valid_client_id(cod_token)
+    supplier_id = get_valid_supplier_id(cod_token)
+
+    # ---------- Create request and bring to approved_for_sourcing ----------
+    create_response = client.post(
+        "/requests/",
+        headers=auth_headers(specialist_token),
+        json=create_request_payload(
+            client_id=client_id,
+            title_prefix="specialist_rfq_request",
+            client_ref=unique_value("SPEC-REF"),
+        ),
+    )
+    request_id = create_response.json()["id"]
+
+    client.patch(f"/requests/{request_id}/submit", headers=auth_headers(specialist_token))
+    client.patch(
+        f"/requests/{request_id}/approve",
+        headers=auth_headers(manager_token),
+        params={"notes": "Approved"},
+    )
+
+    # ---------- Assign to procurement specialist ----------
+    specialist_id = client.get(
+        "/users/me",
+        headers=auth_headers(procurement_specialist_token),
+    ).json()["id"]
+
+    assign_response = client.patch(
+        f"/requests/{request_id}/assign-procurement",
+        headers=auth_headers(procurement_manager_token),
+        params={"assigned_user_id": specialist_id},
+    )
+    assert assign_response.status_code == 200, assign_response.json()
+    assert assign_response.json()["status"] == "rfq_in_progress"
+
+    # ---------- Specialist creates RFQ on assigned request ----------
+    rfq_response = client.post(
+        "/rfqs/",
+        headers=auth_headers(procurement_specialist_token),
+        json={
+            "request_id": request_id,
+            "supplier_id": supplier_id,
+            "response_deadline": "2026-12-31T00:00:00",
+        },
+    )
+    assert rfq_response.status_code == 201, rfq_response.json()
+
+
+# =====================================================
+# QUOTATION TESTS
+# =====================================================
+
+def test_quotation_full_flow():
+    specialist_token = get_valid_sales_specialist_token()
+    manager_token = get_valid_sales_manager_token()
+    procurement_manager_token = get_valid_procurement_manager_token()
+    cod_token = login_as_cod()
+
+    client_id = get_valid_client_id(cod_token)
+    supplier_id = get_valid_supplier_id(cod_token)
+
+    request_id = create_rfq_in_progress_request(
+        specialist_token, manager_token, procurement_manager_token, client_id
+    )
+
+    # ---------- Create and send RFQ ----------
+    rfq_response = client.post(
+        "/rfqs/",
+        headers=auth_headers(procurement_manager_token),
+        json={
+            "request_id": request_id,
+            "supplier_id": supplier_id,
+            "response_deadline": "2026-12-31T00:00:00",
+        },
+    )
+    assert rfq_response.status_code == 201, rfq_response.json()
+    rfq_id = rfq_response.json()["id"]
+
+    client.post(
+        f"/rfqs/{rfq_id}/generate-mailto",
+        headers=auth_headers(procurement_manager_token),
+    )
+
+    # ---------- Create quotation ----------
+    create_quotation_response = client.post(
+        "/quotations/",
+        headers=auth_headers(procurement_manager_token),
+        json={
+            "rfq_id": rfq_id,
+            "currency": "USD",
+            "subtotal": "45000.00",
+            "shipping_cost": "1200.00",
+            "taxes": "500.00",
+            "other_costs": None,
+            "total_amount": "46700.00",
+            "payment_terms": "30% advance, 70% on delivery",
+            "delivery_terms": "CIF Tripoli",
+            "lead_time": "6-8 weeks",
+            "validity_date": "2026-06-30T00:00:00",
+            "notes": "Includes warranty 24 months",
+        },
+    )
+    assert create_quotation_response.status_code == 201, create_quotation_response.json()
+
+    quotation_data = create_quotation_response.json()
+    quotation_id = quotation_data["id"]
+
+    assert quotation_data["status"] == "received"
+    assert quotation_data["rfq_id"] == rfq_id
+    assert quotation_data["supplier_id"] == supplier_id
+
+    # ---------- RFQ status should now be quote_received ----------
+    rfq_check = client.get(
+        f"/rfqs/{rfq_id}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert rfq_check.json()["status"] == "quote_received"
+
+    # ---------- Request should now be in quotation_review ----------
+    request_check = client.get(
+        f"/requests/{request_id}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert request_check.json()["status"] == "quotation_review"
+
+    # ---------- Get quotation by id ----------
+    get_quotation_response = client.get(
+        f"/quotations/{quotation_id}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert get_quotation_response.status_code == 200, get_quotation_response.json()
+    assert get_quotation_response.json()["id"] == quotation_id
+
+    # ---------- Get quotations by RFQ ----------
+    get_by_rfq_response = client.get(
+        f"/quotations/rfq/{rfq_id}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert get_by_rfq_response.status_code == 200, get_by_rfq_response.json()
+    assert len(get_by_rfq_response.json()) == 1
+
+    # ---------- Submit for review ----------
+    submit_response = client.patch(
+        f"/quotations/{quotation_id}/submit",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert submit_response.status_code == 200, submit_response.json()
+    assert submit_response.json()["status"] == "under_review"
+
+    # ---------- Cannot submit again ----------
+    blocked_submit = client.patch(
+        f"/quotations/{quotation_id}/submit",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert blocked_submit.status_code == 400, blocked_submit.json()
+
+    # ---------- Approve quotation ----------
+    approve_response = client.patch(
+        f"/quotations/{quotation_id}/approve",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert approve_response.status_code == 200, approve_response.json()
+    assert approve_response.json()["status"] == "selected"
+
+    # ---------- Request should now be offer_in_progress ----------
+    request_final = client.get(
+        f"/requests/{request_id}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert request_final.json()["status"] == "offer_in_progress"
+
+
+def test_quotation_reject_and_reopen():
+    specialist_token = get_valid_sales_specialist_token()
+    manager_token = get_valid_sales_manager_token()
+    procurement_manager_token = get_valid_procurement_manager_token()
+    cod_token = login_as_cod()
+
+    client_id = get_valid_client_id(cod_token)
+    supplier_id = get_valid_supplier_id(cod_token)
+
+    request_id = create_rfq_in_progress_request(
+        specialist_token, manager_token, procurement_manager_token, client_id
+    )
+
+    # ---------- Create and send RFQ then register quotation ----------
+    rfq_response = client.post(
+        "/rfqs/",
+        headers=auth_headers(procurement_manager_token),
+        json={
+            "request_id": request_id,
+            "supplier_id": supplier_id,
+            "response_deadline": "2026-12-31T00:00:00",
+        },
+    )
+    rfq_id = rfq_response.json()["id"]
+
+    client.post(
+        f"/rfqs/{rfq_id}/generate-mailto",
+        headers=auth_headers(procurement_manager_token),
+    )
+
+    quotation_response = client.post(
+        "/quotations/",
+        headers=auth_headers(procurement_manager_token),
+        json={
+            "rfq_id": rfq_id,
+            "currency": "USD",
+            "subtotal": "50000.00",
+            "total_amount": "50000.00",
+            "validity_date": "2026-06-30T00:00:00",
+        },
+    )
+    quotation_id = quotation_response.json()["id"]
+
+    # ---------- Submit for review ----------
+    client.patch(
+        f"/quotations/{quotation_id}/submit",
+        headers=auth_headers(procurement_manager_token),
+    )
+
+    # ---------- Manager rejects ----------
+    reject_response = client.patch(
+        f"/quotations/{quotation_id}/reject",
+        headers=auth_headers(procurement_manager_token),
+        params={"rejection_notes": "Price is too high"},
+    )
+    assert reject_response.status_code == 200, reject_response.json()
+    assert reject_response.json()["status"] == "rejected"
+    assert reject_response.json()["rejection_notes"] == "Price is too high"
+
+    # ---------- Reopen quotation ----------
+    reopen_response = client.patch(
+        f"/quotations/{quotation_id}/reopen",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert reopen_response.status_code == 200, reopen_response.json()
+    assert reopen_response.json()["status"] == "received"
+    assert reopen_response.json()["rejection_notes"] is None
+
+
+def test_auto_reject_other_quotations_on_submit():
+    specialist_token = get_valid_sales_specialist_token()
+    manager_token = get_valid_sales_manager_token()
+    procurement_manager_token = get_valid_procurement_manager_token()
+    cod_token = login_as_cod()
+
+    client_id = get_valid_client_id(cod_token)
+
+    # ---------- Need two different suppliers ----------
+    suppliers_response = client.get("/suppliers/", headers=auth_headers(cod_token))
+    suppliers = suppliers_response.json()
+    assert len(suppliers) >= 2, "Need at least 2 suppliers for this test"
+    supplier_id_1 = suppliers[0]["id"]
+    supplier_id_2 = suppliers[1]["id"]
+
+    request_id = create_rfq_in_progress_request(
+        specialist_token, manager_token, procurement_manager_token, client_id
+    )
+
+    # ---------- Create two RFQs to two suppliers ----------
+    rfq_1 = client.post(
+        "/rfqs/",
+        headers=auth_headers(procurement_manager_token),
+        json={
+            "request_id": request_id,
+            "supplier_id": supplier_id_1,
+            "response_deadline": "2026-12-31T00:00:00",
+        },
+    )
+    rfq_id_1 = rfq_1.json()["id"]
+
+    rfq_2 = client.post(
+        "/rfqs/",
+        headers=auth_headers(procurement_manager_token),
+        json={
+            "request_id": request_id,
+            "supplier_id": supplier_id_2,
+            "response_deadline": "2026-12-31T00:00:00",
+        },
+    )
+    rfq_id_2 = rfq_2.json()["id"]
+
+    # ---------- Send both RFQs ----------
+    client.post(f"/rfqs/{rfq_id_1}/generate-mailto", headers=auth_headers(procurement_manager_token))
+    client.post(f"/rfqs/{rfq_id_2}/generate-mailto", headers=auth_headers(procurement_manager_token))
+
+    # ---------- Register quotation for each RFQ ----------
+    q1_response = client.post(
+        "/quotations/",
+        headers=auth_headers(procurement_manager_token),
+        json={
+            "rfq_id": rfq_id_1,
+            "currency": "USD",
+            "subtotal": "45000.00",
+            "total_amount": "45000.00",
+            "validity_date": "2026-06-30T00:00:00",
+        },
+    )
+    quotation_id_1 = q1_response.json()["id"]
+
+    q2_response = client.post(
+        "/quotations/",
+        headers=auth_headers(procurement_manager_token),
+        json={
+            "rfq_id": rfq_id_2,
+            "currency": "USD",
+            "subtotal": "52000.00",
+            "total_amount": "52000.00",
+            "validity_date": "2026-06-30T00:00:00",
+        },
+    )
+    quotation_id_2 = q2_response.json()["id"]
+
+    # ---------- Submit quotation 1 for review ----------
+    submit_response = client.patch(
+        f"/quotations/{quotation_id_1}/submit",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert submit_response.status_code == 200, submit_response.json()
+    assert submit_response.json()["status"] == "under_review"
+
+    # ---------- Quotation 2 should now be auto rejected ----------
+    q2_check = client.get(
+        f"/quotations/{quotation_id_2}",
+        headers=auth_headers(procurement_manager_token),
+    )
+    assert q2_check.status_code == 200, q2_check.json()
+    assert q2_check.json()["status"] == "rejected"
+
+
+def test_cleanup_test_users():
+    cleanup_test_users()
