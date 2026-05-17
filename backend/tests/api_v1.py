@@ -1296,6 +1296,7 @@ def test_quotation_full_flow():
         headers=auth_headers(procurement_manager_token),
         json={
             "rfq_id": rfq_id,
+            "client_reference": unique_value("RFQ-REF"),
             "currency": "USD",
             "subtotal": "45000.00",
             "shipping_cost": "1200.00",
@@ -1414,6 +1415,7 @@ def test_quotation_reject_and_reopen():
         headers=auth_headers(procurement_manager_token),
         json={
             "rfq_id": rfq_id,
+            "client_reference": unique_value("Quotation"),
             "currency": "USD",
             "subtotal": "50000.00",
             "total_amount": "50000.00",
@@ -1500,6 +1502,7 @@ def test_auto_reject_other_quotations_on_submit():
         headers=auth_headers(procurement_manager_token),
         json={
             "rfq_id": rfq_id_1,
+            "client_reference": unique_value("Quotation"),
             "currency": "USD",
             "subtotal": "45000.00",
             "total_amount": "45000.00",
@@ -1514,6 +1517,7 @@ def test_auto_reject_other_quotations_on_submit():
         json={
             "rfq_id": rfq_id_2,
             "currency": "USD",
+            "client_reference": unique_value("Quotation"),
             "subtotal": "52000.00",
             "total_amount": "52000.00",
             "validity_date": "2026-06-30T00:00:00",

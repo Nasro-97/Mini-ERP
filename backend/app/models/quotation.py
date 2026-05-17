@@ -23,6 +23,7 @@ class Quotation(Base):
     supplier_id = Column(UUID(as_uuid=True), ForeignKey("suppliers.id", ondelete="RESTRICT"), nullable=False)
 
     quotation_number = Column(String(100), nullable=False, unique=True)
+    client_reference = Column(String(100), nullable=False)
     status = Column(Enum(QuotationStatus), nullable=False, default=QuotationStatus.RECEIVED)
 
     # pricing
