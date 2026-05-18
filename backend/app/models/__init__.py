@@ -12,5 +12,8 @@ from .item import Item, ItemUnit
 from.rfq import RFQ, RFQStatus
 from .quotation import Quotation, QuotationStatus
 
+from .document_item import DocumentItem, DocumentType
+
 from .offer import OfferStatus, Offer
 from .offer_version import OfferVersion
+
