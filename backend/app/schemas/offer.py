@@ -5,9 +5,7 @@ from datetime import datetime
 from app.models.offer import OfferStatus
 
 
-# =====================================================
-# OFFER SCHEMAS
-# =====================================================
+# Offer schemas
 
 class OfferCreate(BaseModel):
     request_id:     UUID
@@ -27,9 +25,7 @@ class OfferOut(BaseModel):
     updated_at:         datetime
 
 
-# =====================================================
-# OFFER VERSION SCHEMAS
-# =====================================================
+# Offer Version Schemas
 
 class OfferVersionCreate(BaseModel):
     currency:           str | None = None
