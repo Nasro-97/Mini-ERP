@@ -29,6 +29,7 @@ def create_item(db: Session,request_id: UUID, item_data: ItemCreate) -> Item:
 
     return item
 
+
 def get_item_by_id(db: Session, item_id: UUID) -> Item | None:
     statement = select(Item).where(Item.id == item_id)
 

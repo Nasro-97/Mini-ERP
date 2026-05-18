@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.roles import has_procurement_access
 from app.models import Quotation, QuotationStatus, User, RFQStatus, RequestStatus
-from app.schemas import QuotationCreate
+from app.schemas import QuotationCreate, QuotationUpdate
 from app.services.rfq import get_rfq_by_id, _check_and_update_request_status, get_rfqs_by_request
 from app.services.request import get_request_by_id
 
@@ -115,6 +115,38 @@ def submit_for_review(db: Session, quotation_id, current_user: User) -> Quotatio
     
     db.commit()
     db.refresh(quotation)
+    return quotation
+
+
+def update_quotation(db: Session, quotation_id: UUID, quotation_data: QuotationUpdate, current_user: User) -> Quotation | None:
+    quotation = get_quotation_by_id(db, quotation_id)
+    if quotation is None:
+        return None
+
+    if quotation.status != QuotationStatus.RECEIVED:
+        return None
+
+    rfq = get_rfq_by_id(db, quotation.rfq_id)
+    if rfq is None:
+        return None
+
+    request = get_request_by_id(db, rfq.request_id)
+    if request is None:
+        return None
+
+    is_assigned = request.procurement_assigned_to_id == current_user.id
+
+    if not has_procurement_access(current_user) and not is_assigned:
+        return None
+
+    updated_data = quotation_data.model_dump(exclude_unset=True)
+
+    for field, value in updated_data.items():
+        setattr(quotation, field, value)
+
+    db.commit()
+    db.refresh(quotation)
+
     return quotation
 
 

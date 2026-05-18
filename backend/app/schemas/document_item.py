@@ -13,8 +13,9 @@ class DocumentItemCreate(BaseModel):
     line_number: int
     description: str
     quantity: int | None = None
-    price: Decimal | None = None
+    unit: str | None = None
 
+    origin_country: str | None = None
     warranty: str | None = None
     unit_price: Decimal | None = None
     total_price: Decimal | None = None
@@ -51,7 +52,7 @@ class DocumentItemUpdate(BaseModel):
     extra_data:     dict[str, Any] | None = None
 
 
-class DocumentItemLineOut(BaseModel):
+class DocumentItemOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id:             UUID

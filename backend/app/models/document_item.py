@@ -24,7 +24,7 @@ class DocumentItem(Base):
     line_number = Column(Integer, nullable=False)
     description = Column(Text, nullable=False)
     quantity = Column(Numeric(12, 3), nullable=True)
-    price = Column(String(50),nullable=True)
+    unit = Column(String(50),nullable=True)
 
     origin_country = Column(String(100), nullable=True)
     warranty = Column(String(200), nullable=True)

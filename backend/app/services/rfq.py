@@ -4,7 +4,7 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.core.roles import has_procurement_access, is_procurement_manager, is_cod
+from app.core.roles import has_procurement_access
 from app.models import RFQ, RFQStatus, RequestStatus, User, Supplier, Contact
 from app.schemas import RFQCreate, RFQUpdate
 from app.services.request import get_request_by_id
