@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_user, required_roles
-from app.schemas import RequestCreate, RequestUpdate, RequestOutput, RequestWithItems, ItemCreate, ItemOutput
+from app.schemas.request import RequestCreate, RequestUpdate, RequestOutput, RequestWithItems
+from app.schemas.item import ItemCreate, ItemOutput
 from app.services import request as request_service
 from app.services import item as item_service
 from app.models import User, RequestStatus

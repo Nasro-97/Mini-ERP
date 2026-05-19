@@ -26,21 +26,7 @@ class OfferOut(BaseModel):
 
 
 # Offer Version Schemas
-
-class OfferVersionCreate(BaseModel):
-    currency:           str | None = None
-    total_price:        Decimal | None = None
-    total_price_letters: str | None = None
-    payment_terms:      str | None = None
-    delivery_terms:     str | None = None
-    delivery_period:    str | None = None
-    validity_date:      datetime | None = None
-    country_of_origin:  str | None = None
-    notes:              str | None = None
-
-
 class OfferVersionUpdate(BaseModel):
-    currency:           str | None = None
     total_price:        Decimal | None = None
     total_price_letters: str | None = None
     payment_terms:      str | None = None
@@ -52,7 +38,8 @@ class OfferVersionUpdate(BaseModel):
 
 
 class CodResponseSchema(BaseModel):
-    notes: str | None = None
+    cod_status: str  # approved / rejected / changes_requested
+    cod_notes: str | None = None
 
 
 class ClientResponseSchema(BaseModel):
@@ -65,11 +52,9 @@ class OfferVersionOut(BaseModel):
 
     id:                     UUID
     offer_id:               UUID
-    created_by_user_id:     UUID
     version_number:         int
     status:                 OfferStatus
 
-    currency:               str | None = None
     total_price:            Decimal | None = None
     total_price_letters:    str | None = None
     payment_terms:          str | None = None
@@ -80,8 +65,8 @@ class OfferVersionOut(BaseModel):
     notes:                  str | None = None
 
     cod_notes:              str | None = None
-    cod_approved_by_id:     UUID | None = None
-    cod_approved_at:        datetime | None = None
+    cod_actioned_by_id: UUID | None = None
+    cod_actioned_at: datetime | None = None
 
     client_notes:           str | None = None
     client_responded_at:    datetime | None = None

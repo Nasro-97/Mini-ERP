@@ -97,6 +97,26 @@ def copy_document_items(db: Session, source_type: DocumentType, source_id: UUID,
     return new_items
 
 
+def copy_items_from_request(db: Session, request_id: UUID, version_id: UUID) -> None:
+    from app.models import Item
+
+    items = db.execute(select(Item).where(Item.request_id == request_id).order_by(Item.line_number)).scalars().all()
+
+    for item in items:
+        line = DocumentItem(
+            item_id=item.id,
+            document_type=DocumentType.OFFER_VERSION,
+            document_id=version_id,
+            line_number=item.line_number,
+            description=item.description,
+            quantity=item.quantity,
+            unit=item.unit,
+        )
+        db.add(line)
+
+    db.flush()
+
+
 def delete_document_item(db: Session, item_id: UUID) -> bool:
     item = get_document_item_by_id(db, item_id)
 

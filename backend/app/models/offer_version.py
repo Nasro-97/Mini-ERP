@@ -30,8 +30,8 @@ class OfferVersion(Base):
 
     # COD approval
     cod_notes = Column(Text, nullable=True)
-    cod_approved_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=True)
-    cod_approved_at = Column(DateTime(timezone=True), nullable=True)
+    cod_actioned_by_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=True)
+    cod_actioned_at = Column(DateTime(timezone=True), nullable=True)
 
     # client response
     client_notes = Column(Text, nullable=True)

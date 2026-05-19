@@ -5,7 +5,7 @@ from sqlalchemy import select, func, or_
 from sqlalchemy.orm import Session
 
 from app.models import Request, User, Item
-from app.schemas import RequestCreate, RequestUpdate, RequestStatus
+from app.schemas.request import RequestCreate, RequestUpdate, RequestStatus
 from app.services.user import get_user_by_id
 from app.core.roles import (
     is_cod,

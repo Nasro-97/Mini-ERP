@@ -7,7 +7,7 @@ from app.schemas.item import ItemOutput
 
 #Frontend --> backend Creating
 class RequestCreate(BaseModel):
-    request_number: str
+    request_number: str | None = None
     title: str
     description: str | None = None
     client_reference: str

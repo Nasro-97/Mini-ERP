@@ -21,7 +21,7 @@ class Offer(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     request_id = Column(UUID(as_uuid=True), ForeignKey("requests.id", ondelete="CASCADE"))
-    quotation_id = Column(UUID(as_uuid=True), ForeignKey("quotations.id"), onupdate="CASCADE")
+    quotation_id = Column(UUID(as_uuid=True),ForeignKey("quotations.id", ondelete="CASCADE"))
     created_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"))
 
     offer_number = Column(String(100), nullable=False, unique=True)

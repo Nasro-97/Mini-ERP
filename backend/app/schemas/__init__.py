@@ -11,4 +11,4 @@ from .rfq import RFQCreate, RFQUpdate, RFQOutput
 from .quotation import QuotationCreate, QuotationUpdate, QuotationOutput
 
 from .document_item import DocumentItemCreate, DocumentItemUpdate, DocumentItemOut
-from .offer import OfferCreate, OfferVersionCreate, OfferOut, OfferVersionUpdate, ClientResponseSchema, OfferVersionOut, OfferWithVersionsOut
+from .offer import OfferCreate, OfferOut, OfferVersionUpdate, ClientResponseSchema, CodResponseSchema, OfferVersionOut, OfferWithVersionsOut

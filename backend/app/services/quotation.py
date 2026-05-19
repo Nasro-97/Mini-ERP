@@ -42,7 +42,7 @@ def create_quotation(db: Session, quotation_data: QuotationCreate, current_user:
         rfq_id=rfq.id,
         supplier_id=rfq.supplier_id,
         quotation_number=quotation_number,
-        client_reference= quotation_data.client_reference,
+        supplier_reference= quotation_data.supplier_reference,
         currency= quotation_data.currency,
         subtotal= quotation_data.subtotal,
         shipping_cost= quotation_data.shipping_cost,

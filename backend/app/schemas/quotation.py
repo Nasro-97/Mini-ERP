@@ -8,7 +8,7 @@ from app.models.quotation import QuotationStatus
 
 class QuotationCreate(BaseModel):
     rfq_id: UUID
-    client_reference: str
+    supplier_reference: str | None = None
     currency: str
     subtotal: Decimal
     shipping_cost: Decimal | None = None
@@ -43,7 +43,7 @@ class QuotationOutput(BaseModel):
     rfq_id: UUID
     supplier_id: UUID
     quotation_number: str
-    client_reference: str
+    supplier_reference: str | None = None
     status: QuotationStatus
     currency: str
     subtotal: Decimal
