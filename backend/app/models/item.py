@@ -21,7 +21,7 @@ class ItemUnit(str, enum.Enum):
 class Item(Base):
     __tablename__ = "items"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    request_id = Column(UUID(as_uuid=True), ForeignKey("requests.id"))
+    request_id = Column(UUID(as_uuid=True), ForeignKey("requests.id", ondelete="CASCADE"), nullable=False)
 
     line_number = Column(Integer, nullable=False)
     description = Column(Text, nullable=False)
