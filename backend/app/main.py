@@ -12,6 +12,7 @@ from app.api.v1.item import router as item_router
 from app.api.v1.rfq import router as rfq_router
 from app.api.v1.quotation import router as quotation_router
 from app.api.v1.offer import router as offer_router
+from app.api.v1.purchase_order import router as purchase_order_router
 
 
 app = FastAPI(
@@ -49,3 +50,4 @@ app.include_router(rfq_router)
 app.include_router(quotation_router)
 
 app.include_router(offer_router)
+app.include_router(purchase_order_router)

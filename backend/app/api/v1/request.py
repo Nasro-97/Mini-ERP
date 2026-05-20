@@ -121,6 +121,7 @@ def delete_request( request_id: UUID, db: Session = Depends(get_db), current_use
         )
 
 
+
 # Get items for a request
 @router.get("/{request_id}/items", response_model=list[ItemOutput], status_code=status.HTTP_200_OK)
 def get_items_by_request( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -142,4 +143,9 @@ def create_item( request_id: UUID, item_data: ItemCreate, db: Session = Depends(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Request not found"
         )
+    if request.status != RequestStatus.DRAFT:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Items can only be added when request is in draft status")
+
     return item_service.create_item(db, request_id, item_data)
+

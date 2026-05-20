@@ -3,7 +3,6 @@ from datetime import datetime, UTC
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
-
 from app.core.roles import has_procurement_access
 from app.models import Quotation, QuotationStatus, User, RFQStatus, RequestStatus
 from app.schemas import QuotationCreate, QuotationUpdate

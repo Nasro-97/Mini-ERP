@@ -1,4 +1,5 @@
 from uuid import UUID
+from datetime import datetime
 from pydantic import BaseModel, EmailStr, ConfigDict
 
 
@@ -31,3 +32,6 @@ class SupplierOut(BaseModel):
     phone_2: str | None= None
     address: str | None= None
     is_active: bool
+
+    created_at: datetime
+    updated_at: datetime

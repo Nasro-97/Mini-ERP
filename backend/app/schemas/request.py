@@ -79,6 +79,9 @@ class RequestOutput(BaseModel):
 
     notes: str | None = None
 
+    created_at: datetime
+    updated_at: datetime
+
 
 # Backend --> frontend request with items attached
 class RequestWithItems(RequestOutput):

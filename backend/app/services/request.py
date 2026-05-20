@@ -7,14 +7,8 @@ from sqlalchemy.orm import Session
 from app.models import Request, User, Item
 from app.schemas.request import RequestCreate, RequestUpdate, RequestStatus
 from app.services.user import get_user_by_id
-from app.core.roles import (
-    is_cod,
-    is_sales_manager,
-    is_procurement_manager,
-    is_procurement_specialist,
-    has_sales_management_access,
-    has_procurement_access,
-)
+from app.core.roles import is_cod, is_sales_manager, is_procurement_manager, is_procurement_specialist, has_sales_management_access, has_procurement_access
+from app.services.document_counter import generate_document_number
 
 
 PROCUREMENT_VISIBLE_STATUSES = [
@@ -31,25 +25,9 @@ PROCUREMENT_VISIBLE_STATUSES = [
 ]
 
 
-def generate_request_number(db: Session, company_code: str) -> str:
-    year_2d = str(datetime.now().year)[2:]
-    year_4d = str(datetime.now().year)
-
-    existing_count = db.execute(select(func.count()).select_from(Request)).scalar() or 0
-    number = str(existing_count + 1).zfill(3)
-
-    formats = {
-        "company1": f"{year_2d}-{number}",
-        "company2": f"QT{year_2d}S{number}",
-        "company3": f"P{year_4d}-{number}",
-        "company4": f"{number}",
-    }
-
-    return formats.get(company_code, f"REQ-{year_4d}-{number}")
-
-
 def create_request(db: Session, request_data: RequestCreate, current_user: User) -> Request:
-    request_number = generate_request_number(db, "company1")
+    # FOR NOW ONLY COMPANY 1 Later the frontend will send it
+    request_number = generate_document_number(db, "request", "company1")
 
     request = Request(
         request_number=request_number,

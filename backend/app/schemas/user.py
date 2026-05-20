@@ -1,5 +1,6 @@
 from uuid import UUID
 from pydantic import BaseModel, EmailStr, ConfigDict
+from datetime import datetime
 
 from app.schemas.role import RoleOut
 
@@ -32,4 +33,7 @@ class UserOut(BaseModel):
     email: EmailStr
     roles: list[RoleOut] = []
     is_active: bool
+
+    created_at: datetime
+    updated_at: datetime
 

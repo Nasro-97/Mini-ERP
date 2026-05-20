@@ -12,3 +12,5 @@ from .quotation import QuotationCreate, QuotationUpdate, QuotationOutput
 
 from .document_item import DocumentItemCreate, DocumentItemUpdate, DocumentItemOut
 from .offer import OfferCreate, OfferOut, OfferVersionUpdate, ClientResponseSchema, CodResponseSchema, OfferVersionOut, OfferWithVersionsOut
+
+from .purchase_order import PurchaseOrderCreate, PurchaseOrderUpdate, PurchaseOrderOutput

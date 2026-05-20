@@ -1,4 +1,5 @@
 from uuid import UUID
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
@@ -20,3 +21,6 @@ class RoleOut(BaseModel):
     id: UUID
     name: str
     description: str | None = None
+
+    created_at: datetime
+    updated_at: datetime

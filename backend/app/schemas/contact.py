@@ -1,4 +1,5 @@
 from uuid import UUID
+from datetime import datetime
 from pydantic import BaseModel, EmailStr, ConfigDict
 
 from app.models import CompanyType
@@ -42,3 +43,6 @@ class ContactOut(BaseModel):
     phone_2: str | None= None
 
     is_active: bool
+
+    created_at: datetime
+    updated_at: datetime
