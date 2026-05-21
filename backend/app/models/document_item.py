@@ -17,7 +17,6 @@ class DocumentItem(Base):
     __tablename__ = "documents_item"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    item_id = Column(UUID(as_uuid=True), ForeignKey("items.id", ondelete="CASCADE"), nullable=False)
     document_id = Column(UUID(as_uuid=True), nullable=False)
     document_type = Column(Enum(DocumentType), nullable=False)
 

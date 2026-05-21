@@ -7,7 +7,6 @@ from app.models.document_item import DocumentType
 
 
 class DocumentItemCreate(BaseModel):
-    item_id: UUID
     document_type: DocumentType
     document_id: UUID
     line_number: int
@@ -56,7 +55,6 @@ class DocumentItemOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id:             UUID
-    item_id:        UUID
     document_type:  DocumentType
     document_id:    UUID
     line_number:    int

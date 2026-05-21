@@ -20,7 +20,6 @@ def get_document_item_by_document(db: Session, document_type: DocumentType, docu
 
 def add_document_item(db: Session,document_type: DocumentType,document_id: UUID ,item_data: DocumentItemCreate) -> DocumentItem:
     item = DocumentItem(
-        item_id=item_data.item_id,
         document_type=document_type,
         document_id=document_id,
 
@@ -71,7 +70,6 @@ def copy_document_items(db: Session, source_type: DocumentType, source_id: UUID,
 
     for item in source_items:
         new_item = DocumentItem(
-            item_id= item.item_id,
             document_type= target_type,
             document_id= target_id,
             line_number= item.line_number,
@@ -104,7 +102,6 @@ def copy_items_from_request(db: Session, request_id: UUID, version_id: UUID) -> 
 
     for item in items:
         line = DocumentItem(
-            item_id=item.id,
             document_type=DocumentType.OFFER_VERSION,
             document_id=version_id,
             line_number=item.line_number,
