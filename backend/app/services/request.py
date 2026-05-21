@@ -1,7 +1,7 @@
 from datetime import datetime, UTC
 from uuid import UUID
 
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
 
 from app.models import Request, User, Item
@@ -219,7 +219,7 @@ def assign_procurement(db: Session, request_id: UUID, assigned_user_id: UUID, cu
     if assigned_user is None:
         return None
 
-    if not is_procurement_manager(assigned_user) and not is_procurement_specialist(assigned_user):
+    if not has_procurement_access(assigned_user) and not is_procurement_specialist(assigned_user):
         return None
 
     request.procurement_assigned_to_id = assigned_user_id

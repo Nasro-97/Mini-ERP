@@ -16,7 +16,6 @@ router = APIRouter(prefix="/requests", tags=["Requests"])
 # Create request + items in one call
 @router.post("/", response_model=RequestWithItems, status_code=status.HTTP_201_CREATED)
 def create_request( request_data: RequestCreate, items: list[ItemCreate] = Body(default=[]), db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager","COD"]))):
-    request = request_service.create_request(db, request_data, items)
     new_request = request_service.create_request(db, request_data, current_user)
 
     for item_data in items:
@@ -47,7 +46,6 @@ def get_request_by_id( request_id: UUID, db: Session = Depends(get_db), current_
 # Update request general fields
 @router.patch("/{request_id}", response_model=RequestOutput, status_code=status.HTTP_200_OK)
 def update_request( request_id: UUID, request_data: RequestUpdate, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager","COD"]))):
-    request = request_service.update_request(db, request_id, request_data)
     request = request_service.update_request(db, request_id, request_data)
 
     if request is None:
@@ -95,12 +93,7 @@ def reject_request( request_id: UUID, notes: str, db: Session = Depends(get_db),
 
 
 @router.patch("/{request_id}/assign-procurement", response_model=RequestOutput, status_code=status.HTTP_200_OK)
-def assign_procurement(
-    request_id: UUID,
-    assigned_user_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(required_roles(["Procurement Manager"]))
-):
+def assign_procurement(request_id: UUID, assigned_user_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Procurement Manager","COD", "Sales Specialist"]))):
     request = request_service.assign_procurement(db, request_id, assigned_user_id, current_user)
 
     if request is None:
@@ -121,7 +114,6 @@ def delete_request( request_id: UUID, db: Session = Depends(get_db), current_use
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Request not found or cannot be deleted after submission"
         )
-
 
 
 # Get items for a request

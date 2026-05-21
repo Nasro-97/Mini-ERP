@@ -110,11 +110,7 @@ def reject_quotation(
 
 
 @router.patch("/{quotation_id}/reopen", response_model=QuotationOutput, status_code=status.HTTP_200_OK)
-def reopen_quotation(
-    quotation_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(required_roles(["Procurement Manager", "Procurement Specialist", "COD"]))
-):
+def reopen_quotation(quotation_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Procurement Manager", "Procurement Specialist", "COD"]))):
     quotation = quotation_service.reopen_quotation(db, quotation_id, current_user)
     if quotation is None:
         raise HTTPException(
