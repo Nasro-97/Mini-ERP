@@ -15,7 +15,8 @@ router = APIRouter(prefix="/requests", tags=["Requests"])
 
 # Create request + items in one call
 @router.post("/", response_model=RequestWithItems, status_code=status.HTTP_201_CREATED)
-def create_request( request_data: RequestCreate, items: list[ItemCreate] = Body(default=[]), db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager"]))):
+def create_request( request_data: RequestCreate, items: list[ItemCreate] = Body(default=[]), db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager","COD"]))):
+    request = request_service.create_request(db, request_data, items)
     new_request = request_service.create_request(db, request_data, current_user)
 
     for item_data in items:
@@ -45,7 +46,8 @@ def get_request_by_id( request_id: UUID, db: Session = Depends(get_db), current_
 
 # Update request general fields
 @router.patch("/{request_id}", response_model=RequestOutput, status_code=status.HTTP_200_OK)
-def update_request( request_id: UUID, request_data: RequestUpdate, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager"]))):
+def update_request( request_id: UUID, request_data: RequestUpdate, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager","COD"]))):
+    request = request_service.update_request(db, request_id, request_data)
     request = request_service.update_request(db, request_id, request_data)
 
     if request is None:
@@ -58,7 +60,7 @@ def update_request( request_id: UUID, request_data: RequestUpdate, db: Session =
 
 # Submit for sales manager review
 @router.patch("/{request_id}/submit", response_model=RequestOutput, status_code=status.HTTP_200_OK)
-def submit_for_review( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist"]))):
+def submit_for_review( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "COD"]))):
     request = request_service.submit_for_review(db, request_id)
     if request is None:
         raise HTTPException(
@@ -70,7 +72,7 @@ def submit_for_review( request_id: UUID, db: Session = Depends(get_db), current_
 
 # Approve request
 @router.patch("/{request_id}/approve", response_model=RequestOutput, status_code=status.HTTP_200_OK)
-def approve_request( request_id: UUID, notes: str | None = None, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Manager"]))):
+def approve_request( request_id: UUID, notes: str | None = None, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Manager", "COD"]))):
     request = request_service.approve_request(db, request_id, current_user, notes)
     if request is None:
         raise HTTPException(
@@ -82,7 +84,7 @@ def approve_request( request_id: UUID, notes: str | None = None, db: Session = D
 
 # Reject request
 @router.patch("/{request_id}/reject", response_model=RequestOutput, status_code=status.HTTP_200_OK)
-def reject_request( request_id: UUID, notes: str, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Manager"]))):
+def reject_request( request_id: UUID, notes: str, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Manager", "COD"]))):
     request = request_service.reject_request(db, request_id, current_user, notes)
     if request is None:
         raise HTTPException(
@@ -112,7 +114,7 @@ def assign_procurement(
 
 # Delete request — only if DRAFT
 @router.delete("/{request_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_request( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager"]))):
+def delete_request( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["COD","Sales Specialist", "Sales Manager"]))):
     deleted = request_service.delete_request(db, request_id)
     if not deleted:
         raise HTTPException(
@@ -136,7 +138,7 @@ def get_items_by_request( request_id: UUID, db: Session = Depends(get_db), curre
 
 # Add item to existing request
 @router.post("/{request_id}/items", response_model=ItemOutput, status_code=status.HTTP_201_CREATED)
-def create_item( request_id: UUID, item_data: ItemCreate, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager"]))):
+def create_item( request_id: UUID, item_data: ItemCreate, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["COD","Sales Specialist", "Sales Manager"]))):
     request = request_service.get_request_by_id(db, request_id)
     if request is None:
         raise HTTPException(
