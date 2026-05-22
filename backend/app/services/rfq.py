@@ -16,7 +16,7 @@ def create_rfq(db: Session, rfq_data: RFQCreate, current_user: User) -> RFQ | No
     if request is None:
         return None
 
-    if request.status != RequestStatus.RFQ_IN_PROGRESS:
+    if request.status != RequestStatus.RFQ_IN_PROGRESS and request.status != RequestStatus.QUOTATION_REVIEW:
         return None
 
     is_assigned = request.procurement_assigned_to_id == current_user.id

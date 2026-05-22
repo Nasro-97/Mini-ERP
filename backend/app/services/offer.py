@@ -3,14 +3,14 @@ from datetime import datetime, UTC
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.roles import has_sales_management_access, is_cod
+from app.core.roles import has_sales_management_access, is_cod, has_procurement_access
 
 from app.services.quotation import get_quotation_by_id
 from app.services.request import get_request_by_id
 from app.services.document_item import copy_items_from_request, copy_document_items
 
 from app.schemas import OfferCreate, OfferVersionUpdate, ClientResponseSchema, CodResponseSchema
-from app.models import Offer, OfferStatus, User, RequestStatus, OfferVersion, DocumentType
+from app.models import Offer, OfferStatus, User, RequestStatus, OfferVersion, DocumentType, Request
 
 
 # create offer → creates offer + first version + copies item lines from request
@@ -51,7 +51,7 @@ def create_offer(db: Session, offer_data: OfferCreate, current_user: User) -> Of
     db.add(version)
     db.flush()
 
-    copy_items_from_request(db, request.id, version.id)
+    copy_document_items(db, source_type=DocumentType.REQUEST, source_id=request.id, target_type=DocumentType.OFFER_VERSION, target_id=version.id)
 
     db.commit()
     db.refresh(offer)
@@ -311,3 +311,35 @@ def create_new_version(db: Session, offer_id: UUID, current_user: User) -> Offer
     db.refresh(new_version)
 
     return new_version
+
+
+def delete_version(db: Session, version_id: UUID, current_user: User) -> OfferVersion | None:
+    offer_version = get_offer_version_by_id(db, version_id)
+    if offer_version is None:
+        return None
+
+    if offer_version.status != OfferStatus.DRAFT:
+        return None
+
+    offer = get_offer_by_id(db, offer_version.offer_id)
+    if offer is None:
+        return None
+
+    if offer_version.version_number == 1:
+        # Deleting the only version — delete the entire offer and reset request
+        request = get_request_by_id(db, offer.request_id)
+        if request is not None:
+            request.status = RequestStatus.QUOTATION_REVIEW
+
+        db.delete(offer_version)
+        db.flush()
+        db.delete(offer)
+
+    else:
+        # Deleting a later version — just step current_version back
+        if offer.current_version == offer_version.version_number:
+            offer.current_version = offer_version.version_number - 1
+        db.delete(offer_version)
+
+    db.commit()
+    return offer_version

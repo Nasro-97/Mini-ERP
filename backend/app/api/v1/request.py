@@ -58,7 +58,7 @@ def update_request( request_id: UUID, request_data: RequestUpdate, db: Session =
 
 # Submit for sales manager review
 @router.patch("/{request_id}/submit", response_model=RequestOutput, status_code=status.HTTP_200_OK)
-def submit_for_review( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "COD"]))):
+def submit_for_review( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "COD","Sales Manager"]))):
     request = request_service.submit_for_review(db, request_id)
     if request is None:
         raise HTTPException(
@@ -93,7 +93,7 @@ def reject_request( request_id: UUID, notes: str, db: Session = Depends(get_db),
 
 
 @router.patch("/{request_id}/assign-procurement", response_model=RequestOutput, status_code=status.HTTP_200_OK)
-def assign_procurement(request_id: UUID, assigned_user_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Procurement Manager","COD", "Sales Specialist"]))):
+def assign_procurement(request_id: UUID, assigned_user_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Procurement Manager","COD", "Sales Manager"]))):
     request = request_service.assign_procurement(db, request_id, assigned_user_id, current_user)
 
     if request is None:

@@ -93,7 +93,7 @@ def send_to_client( version_id: UUID, db: Session = Depends(get_db), current_use
 
 
 @router.patch("/versions/{version_id}/client-response", response_model=OfferVersionOut, status_code=status.HTTP_200_OK)
-def record_client_response( version_id: UUID, client_response: ClientResponseSchema, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager", "COD"]))):
+def record_client_response(version_id: UUID, client_response: ClientResponseSchema, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager", "COD"]))):
     version = offer_service.record_client_response(db, version_id, client_response, current_user)
     if version is None:
         raise HTTPException(
@@ -103,8 +103,16 @@ def record_client_response( version_id: UUID, client_response: ClientResponseSch
     return version
 
 
+@router.get("/versions/{version_id}", response_model=OfferVersionOut, status_code=status.HTTP_200_OK)
+def get_offer_version(version_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    version = offer_service.get_offer_version_by_id(db, version_id)
+    if version is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Offer version not found")
+    return version
+
+
 @router.post("/{offer_id}/new-version", response_model=OfferVersionOut, status_code=status.HTTP_201_CREATED)
-def create_new_version( offer_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager", "COD"]))):
+def create_new_version(offer_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager", "COD"]))):
     version = offer_service.create_new_version(db, offer_id, current_user)
     if version is None:
         raise HTTPException(
@@ -114,9 +122,19 @@ def create_new_version( offer_id: UUID, db: Session = Depends(get_db), current_u
     return version
 
 
+@router.delete("/versions/{version_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_offer_version(version_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager", "COD"]))):
+    version = offer_service.delete_version(db, version_id, current_user)
+    if version is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not delete version. Only DRAFT versions can be deleted."
+        )
+
+
 # Offer Item routes
 @router.get("/versions/{version_id}/items", response_model=list[DocumentItemOut], status_code=status.HTTP_200_OK)
-def get_offer_version_items( version_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def get_offer_version_items( version_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Specialist", "Sales Manager", "COD"]))):
     version = offer_service.get_offer_version_by_id(db, version_id)
     if version is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Offer version not found")
