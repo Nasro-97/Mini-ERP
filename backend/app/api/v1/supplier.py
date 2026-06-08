@@ -11,7 +11,7 @@ from app.services import supplier as supplier_service
 router = APIRouter(prefix="/suppliers", tags=["Suppliers"])
 
 # Roles allowed to create, update, activate, and deactivate suppliers
-allowed_roles = ["COD", "Sales Manager", "Procurement Manager"]
+allowed_roles = ["COD", "Procurement Specialist", "Procurement Manager"]
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=SupplierOut)
@@ -38,12 +38,7 @@ def get_suppliers(db: Session = Depends(get_db)):
 
 
 @router.patch("/{supplier_id}", status_code=status.HTTP_200_OK, response_model=SupplierOut)
-def update_supplier(
-    supplier_id: UUID,
-    supplier_data: SupplierUpdate,
-    db: Session = Depends(get_db),
-    current_user=Depends(required_roles(allowed_roles)),
-):
+def update_supplier( supplier_id: UUID, supplier_data: SupplierUpdate, db: Session = Depends(get_db), current_user=Depends(required_roles(allowed_roles))):
     supplier = supplier_service.update_supplier(db, supplier_data, supplier_id)
 
     if supplier is None:
@@ -56,11 +51,7 @@ def update_supplier(
 
 
 @router.patch("/{supplier_id}/deactivate", status_code=status.HTTP_200_OK, response_model=SupplierOut)
-def deactivate_supplier(
-    supplier_id: UUID,
-    db: Session = Depends(get_db),
-    current_user=Depends(required_roles(allowed_roles)),
-):
+def deactivate_supplier( supplier_id: UUID, db: Session = Depends(get_db), current_user=Depends(required_roles(allowed_roles))):
     supplier = supplier_service.deactivate_supplier(db, supplier_id)
 
     if supplier is None:

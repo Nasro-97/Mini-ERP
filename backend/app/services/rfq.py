@@ -108,7 +108,7 @@ def generate_mailto(db: Session, rfq_id: UUID, current_user: User) -> dict | Non
     if rfq is None:
         return None
 
-    if rfq.status != RFQStatus.DRAFT:
+    if rfq.status not in [RFQStatus.DRAFT, RFQStatus.SENT]:
         return None
 
     request = get_request_by_id(db, rfq.request_id)
@@ -116,14 +116,12 @@ def generate_mailto(db: Session, rfq_id: UUID, current_user: User) -> dict | Non
         return None
 
     is_assigned = request.procurement_assigned_to_id == current_user.id
-
     if not has_procurement_access(current_user) and not is_assigned:
         return None
 
     supplier = db.execute(
         select(Supplier).where(Supplier.id == rfq.supplier_id)
     ).scalar_one_or_none()
-
     if supplier is None:
         return None
 
@@ -160,11 +158,6 @@ def generate_mailto(db: Session, rfq_id: UUID, current_user: User) -> dict | Non
         f"{settings.COMPANY_PHONE}"
     )
 
-    rfq.status = RFQStatus.SENT
-    rfq.sent_at = datetime.now(UTC)
-
-    db.commit()
-    db.refresh(rfq)
 
     return {
         "to": to_email,
@@ -173,6 +166,30 @@ def generate_mailto(db: Session, rfq_id: UUID, current_user: User) -> dict | Non
         "body": body,
         "rfq_number": rfq.rfq_number,
     }
+
+
+def mark_rfq_as_sent(db: Session, rfq_id: UUID, current_user: User) -> RFQ | None:
+    rfq = get_rfq_by_id(db, rfq_id)
+    if rfq is None:
+        return None
+
+    if rfq.status != RFQStatus.DRAFT:
+        return None
+
+    request = get_request_by_id(db, rfq.request_id)
+    if request is None:
+        return None
+
+    is_assigned = request.procurement_assigned_to_id == current_user.id
+    if not has_procurement_access(current_user) and not is_assigned:
+        return None
+
+    rfq.status = RFQStatus.SENT
+    rfq.sent_at = datetime.now(UTC)
+
+    db.commit()
+    db.refresh(rfq)
+    return rfq
 
 
 def decline_rfq(db: Session, rfq_id: UUID, current_user: User) -> RFQ | None:

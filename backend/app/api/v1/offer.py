@@ -30,6 +30,11 @@ def create_offer( offer_data: OfferCreate, db: Session = Depends(get_db), curren
     return offer
 
 
+@router.get("/", response_model=list[OfferWithVersionsOut], status_code=status.HTTP_200_OK)
+def get_all_offers( db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return offer_service.get_all_offers(db, current_user)
+
+
 @router.get("/request/{request_id}", response_model=OfferWithVersionsOut, status_code=status.HTTP_200_OK)
 def get_offer_by_request( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     offer = offer_service.get_offer_by_request(db, request_id)

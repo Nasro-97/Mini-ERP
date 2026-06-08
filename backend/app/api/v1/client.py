@@ -10,7 +10,7 @@ from app.services import client as client_service
 router = APIRouter(prefix="/clients", tags=["Clients"])
 
 # Roles allowed to create, update, activate, and deactivate clients
-allowed_roles = ["COD", "Sales Manager", "Procurement Manager"]
+allowed_roles = ["COD", "Sales Manager", "Sales Specialist"]
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=ClientOut)
@@ -28,7 +28,7 @@ def get_clients(db: Session = Depends(get_db)):
     return client_service.get_clients(db)
 
 
-#deactivate and activate are only possible by the roles : "COD", "Sales Manager", "Procurement Manager"
+#deactivate and activate are only possible by the roles : "COD", "Sales Manager", "Sales Specialist"
 @router.patch("/{client_id}/deactivate", status_code=status.HTTP_200_OK, response_model=ClientOut)
 def deactivate_company(client_id: UUID, db: Session = Depends(get_db), current_user=Depends(required_roles(allowed_roles))):
     client = client_service.deactivate_client(db, client_id)
@@ -38,7 +38,7 @@ def deactivate_company(client_id: UUID, db: Session = Depends(get_db), current_u
     return client
 
 
-# activate and activate are only possible by the roles : "COD", "Sales Manager", "Procurement Manager"
+# activate and activate are only possible by the roles : "COD", "Sales Manager", "Sales Specialist"
 @router.patch("/{client_id}/activate", status_code=status.HTTP_200_OK, response_model=ClientOut)
 def activate_company(client_id, db: Session = Depends(get_db), current_user=Depends(required_roles(allowed_roles))):
     client = client_service.activate_client(db, client_id)

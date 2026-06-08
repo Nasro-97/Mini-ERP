@@ -60,6 +60,17 @@ def generate_mailto( rfq_id: UUID, db: Session = Depends(get_db), current_user: 
     return result
 
 
+@router.patch("/{rfq_id}/mark-sent", response_model=RFQOutput, status_code=status.HTTP_200_OK)
+def mark_as_sent(rfq_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Procurement Manager", "Procurement Specialist", "COD"]))):
+    rfq = rfq_service.mark_rfq_as_sent(db, rfq_id, current_user)
+    if rfq is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not mark RFQ as sent. Must be in DRAFT status."
+        )
+    return rfq
+
+
 @router.patch("/{rfq_id}/decline", response_model=RFQOutput, status_code=status.HTTP_200_OK)
 def decline_rfq( rfq_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Procurement Manager", "Procurement Specialist", "COD"]))):
     rfq = rfq_service.decline_rfq(db, rfq_id, current_user)

@@ -1,16 +1,16 @@
 from uuid import UUID
 from datetime import datetime, UTC
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app.core.roles import has_sales_management_access, is_cod, has_procurement_access
+from app.core.roles import has_sales_management_access, is_cod, is_sales_specialist
 
 from app.services.quotation import get_quotation_by_id
 from app.services.request import get_request_by_id
-from app.services.document_item import copy_items_from_request, copy_document_items
+from app.services.document_item import copy_document_items
 
 from app.schemas import OfferCreate, OfferVersionUpdate, ClientResponseSchema, CodResponseSchema
-from app.models import Offer, OfferStatus, User, RequestStatus, OfferVersion, DocumentType, Request
+from app.models import Offer, OfferStatus, User, RequestStatus, OfferVersion, DocumentType
 
 
 # create offer → creates offer + first version + copies item lines from request
@@ -343,3 +343,24 @@ def delete_version(db: Session, version_id: UUID, current_user: User) -> OfferVe
 
     db.commit()
     return offer_version
+
+
+def get_all_offers(db: Session, current_user: User) -> list[Offer]:
+    if has_sales_management_access(current_user):
+        statement = (
+            select(Offer)
+            .options(joinedload(Offer.versions))
+            .order_by(Offer.created_at.desc())
+        )
+        return list(db.execute(statement).unique().scalars().all())
+
+    if is_sales_specialist(current_user):
+        statement = (
+            select(Offer)
+            .options(joinedload(Offer.versions))
+            .where(Offer.created_by_user_id == current_user.id)
+            .order_by(Offer.created_at.desc())
+        )
+        return list(db.execute(statement).unique().scalars().all())
+
+    return []

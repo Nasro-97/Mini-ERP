@@ -13,7 +13,7 @@ from app.services import contact as contact_service
 router = APIRouter(prefix="/contacts", tags=["Contacts"])
 
 # Roles allowed to create, update, activate, and deactivate contacts
-allowed_roles = ["COD", "Sales Manager", "Procurement Manager"]
+allowed_roles = ["COD", "Procurement Specialist", "Procurement Manager"]
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=ContactOut)

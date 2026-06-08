@@ -31,9 +31,6 @@ def update_item(item_id: UUID, item_data: ItemUpdate, db: Session = Depends(get_
     if item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
 
-    request = request_service.get_request_by_id(db, item.request_id)
-    if request is None or request.status != RequestStatus.DRAFT:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Items can only be modified when request is in draft status")
 
     updated = item_service.update_item(db, item_id, item_data)
     return updated
@@ -45,8 +42,5 @@ def delete_item(item_id: UUID, db: Session = Depends(get_db), current_user: User
     if item is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
 
-    request = request_service.get_request_by_id(db, item.request_id)
-    if request is None or request.status != RequestStatus.DRAFT:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Items can only be deleted when request is in draft status")
 
     item_service.delete_item(db, item_id)

@@ -4,6 +4,7 @@ import uuid
 from app.core.database import Base
 from sqlalchemy import Column, String, DateTime, ForeignKey, func, Integer
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 class OfferStatus(str, enum.Enum):
     DRAFT = "draft"
@@ -29,3 +30,5 @@ class Offer(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    versions = relationship("OfferVersion", back_populates="offer", order_by="OfferVersion.version_number")

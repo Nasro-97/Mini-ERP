@@ -137,9 +137,6 @@ def create_item( request_id: UUID, item_data: ItemCreate, db: Session = Depends(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Request not found"
         )
-    if request.status != RequestStatus.DRAFT:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Items can only be added when request is in draft status")
 
     return item_service.create_item(db, request_id, item_data)
 

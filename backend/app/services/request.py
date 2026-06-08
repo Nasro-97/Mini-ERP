@@ -41,6 +41,7 @@ def create_request(db: Session, request_data: RequestCreate, current_user: User)
         request_date=request_data.request_date,
         required_date=request_data.required_date,
         deadline=request_data.deadline,
+        notes=request_data.notes,
         sales_manager_notes=request_data.sales_manager_notes,
         sales_manager_decision_at=request_data.sales_manager_decision_at,
     )
