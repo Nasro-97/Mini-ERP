@@ -70,6 +70,11 @@ def get_rfq_by_id(db: Session, rfq_id: UUID) -> RFQ | None:
     return db.execute(statement).scalar_one_or_none()
 
 
+def get_rfqs_by_supplier(db: Session, supplier_id: UUID) -> RFQ | None:
+    statement = select(RFQ).where(RFQ.supplier_id == supplier_id)
+    return db.execute(statement).scalars().all()
+
+
 def get_rfqs_by_request(db: Session, request_id: UUID) -> list[RFQ]:
     statement = select(RFQ).where(RFQ.request_id == request_id)
     return list(db.execute(statement).scalars().all())

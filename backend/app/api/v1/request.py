@@ -92,6 +92,17 @@ def reject_request( request_id: UUID, notes: str, db: Session = Depends(get_db),
     return request
 
 
+@router.patch("/{request_id}/close", response_model=RequestOutput, status_code=status.HTTP_200_OK)
+def reject_request( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Manager", "COD"]))):
+    request = request_service.close_request(db, request_id, current_user)
+    if request is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request not found or not in SHIPMENT_IN_PROGRESS status"
+        )
+    return request
+
+
 @router.patch("/{request_id}/assign-procurement", response_model=RequestOutput, status_code=status.HTTP_200_OK)
 def assign_procurement(request_id: UUID, assigned_user_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Procurement Manager","COD", "Sales Manager"]))):
     request = request_service.assign_procurement(db, request_id, assigned_user_id, current_user)

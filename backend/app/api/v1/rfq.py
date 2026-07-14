@@ -38,6 +38,11 @@ def get_rfqs_by_request( request_id: UUID, db: Session = Depends(get_db), curren
     return rfq_service.get_rfqs_by_request(db, request_id)
 
 
+@router.get("/supplier/{supplier_id}", response_model=list[RFQOutput], status_code=status.HTTP_200_OK)
+def get_rfqs_by_supplier( supplier_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return rfq_service.get_rfqs_by_supplier(db, supplier_id)
+
+
 @router.patch("/{rfq_id}", response_model=RFQOutput, status_code=status.HTTP_200_OK)
 def update_rfq( rfq_id: UUID, rfq_data: RFQUpdate, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Procurement Manager", "Procurement Specialist", "COD"]))):
     rfq = rfq_service.update_rfq(db, rfq_id, rfq_data, current_user)

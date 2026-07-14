@@ -188,6 +188,26 @@ def reject_request(db: Session, request_id: UUID, current_user: User, notes: str
     return request
 
 
+def close_request(db: Session, request_id: UUID, current_user: User) -> Request | None:
+    request = get_request_by_id(db, request_id)
+
+    if request is None:
+        return None
+
+    if request.status != RequestStatus.SHIPMENT_IN_PROGRESS:
+        return None
+
+    if not has_sales_management_access(current_user):
+        return None
+
+    request.status = RequestStatus.CLOSED
+
+    db.commit()
+    db.refresh(request)
+
+    return request
+
+
 def delete_request(db: Session, request_id: UUID) -> bool:
     request = get_request_by_id(db, request_id)
 
