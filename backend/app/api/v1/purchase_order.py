@@ -163,6 +163,19 @@ def update_purchase_order_item(po_id: UUID, line_id: UUID, item_data: DocumentIt
     return item
 
 
+@router.patch("/{po_id}/request-changes", response_model=PurchaseOrderOutput)
+def request_po_changes(po_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    purchase_order = po_service.request_po_changes(db, po_id, current_user)
+
+    if purchase_order is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot request changes for this purchase order.",
+        )
+
+    return purchase_order
+
+
 @router.delete("/{po_id}/items/{line_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_purchase_order_item(po_id: UUID, line_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["COD", "Procurement Manager", "Procurement Specialist"]))):
     purchase_order = po_service.get_po_by_id(db, po_id)

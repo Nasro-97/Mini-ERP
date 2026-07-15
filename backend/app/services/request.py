@@ -26,7 +26,6 @@ PROCUREMENT_VISIBLE_STATUSES = [
 
 
 def create_request(db: Session, request_data: RequestCreate, current_user: User) -> Request:
-    # FOR NOW ONLY COMPANY 1 Later the frontend will send it
     request_number = generate_document_number(db, "request", "company1")
 
     request = Request(

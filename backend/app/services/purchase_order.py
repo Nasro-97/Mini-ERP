@@ -164,6 +164,31 @@ def accept_po(db: Session, po_id: UUID, current_user: User) -> PurchaseOrder | N
 
     return purchase_order
 
+
+def request_po_changes(db: Session, po_id: UUID, current_user: User) -> PurchaseOrder | None:
+    purchase_order = get_po_by_id(db, po_id)
+    if purchase_order is None:
+        return None
+
+    request = get_request_by_id(db, purchase_order.request_id)
+    if request is None:
+        return None
+
+    if purchase_order.status != POStatus.SENT:
+        return None
+
+    is_assigned = request.procurement_assigned_to_id == current_user.id
+    if not has_procurement_access(current_user) and not is_assigned:
+        return None
+
+    purchase_order.status = POStatus.DRAFT
+
+    db.commit()
+    db.refresh(purchase_order)
+
+    return purchase_order
+
+
 def delete_po(db: Session, po_id: UUID, current_user: User) -> bool:
     purchase_order = get_po_by_id(db, po_id)
     if purchase_order is None:

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1.user import router as user_router
 from app.api.v1.role import router as role_router
@@ -13,6 +14,8 @@ from app.api.v1.rfq import router as rfq_router
 from app.api.v1.quotation import router as quotation_router
 from app.api.v1.offer import router as offer_router
 from app.api.v1.purchase_order import router as purchase_order_router
+from app.api.v1.settings import router as settings_router
+from app.api.v1.pdf import router as pdf_router
 
 
 app = FastAPI(
@@ -28,6 +31,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 
@@ -51,3 +57,6 @@ app.include_router(quotation_router)
 
 app.include_router(offer_router)
 app.include_router(purchase_order_router)
+
+app.include_router(settings_router)
+app.include_router(pdf_router)

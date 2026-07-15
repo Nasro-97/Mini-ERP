@@ -36,15 +36,15 @@ def generate_document_number(db: Session, document_type: str, company_code: str)
 
     if document_type == "po":
         formats = {
-            "company1": f"PO {year_2d}-{number}",
-            "company2": f"PO {year_2d}S{number}",
+            "company1": f"PO{year_2d}-{number}",
+            "company2": f"PO{year_2d}S{number}",
             "company3": f"PO{year_4d}-{number}",
             "company4": f"PO{number}",
         }
     elif document_type == "request":
         formats = {
-            "company1": f"REQ {year_2d}-{number}",
-            "company2": f"REQ {year_2d}S{number}",
+            "company1": f"REQ{year_2d}-{number}",
+            "company2": f"REQ{year_2d}S{number}",
             "company3": f"REQ{year_4d}-{number}",
             "company4": f"REQ{number}",
         }
