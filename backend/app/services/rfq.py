@@ -3,11 +3,12 @@ from datetime import datetime, UTC
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
-from app.core.config import settings
 from app.core.roles import has_procurement_access
 from app.models import RFQ, RFQStatus, RequestStatus, User, Supplier, Contact
 from app.schemas import RFQCreate, RFQUpdate
 from app.services.request import get_request_by_id
+from app.services.pdf_generator import render_template
+from app.services.settings import get_settings
 
 
 def create_rfq(db: Session, rfq_data: RFQCreate, current_user: User) -> RFQ | None:
@@ -109,7 +110,9 @@ def update_rfq(db: Session, rfq_id: UUID, rfq_data: RFQUpdate, current_user: Use
 
 
 def generate_mailto(db: Session, rfq_id: UUID, current_user: User) -> dict | None:
+
     rfq = get_rfq_by_id(db, rfq_id)
+
     if rfq is None:
         return None
 
@@ -117,56 +120,57 @@ def generate_mailto(db: Session, rfq_id: UUID, current_user: User) -> dict | Non
         return None
 
     request = get_request_by_id(db, rfq.request_id)
+
     if request is None:
         return None
 
     is_assigned = request.procurement_assigned_to_id == current_user.id
+
     if not has_procurement_access(current_user) and not is_assigned:
         return None
 
     supplier = db.execute(
-        select(Supplier).where(Supplier.id == rfq.supplier_id)
-    ).scalar_one_or_none()
+        select(Supplier).where(Supplier.id == rfq.supplier_id)).scalar_one_or_none()
+
     if supplier is None:
         return None
 
+    contact = None
+
     if rfq.contact_id is not None:
-        contact = db.execute(
-            select(Contact).where(Contact.id == rfq.contact_id)
-        ).scalar_one_or_none()
-        to_email = contact.email if contact and contact.email else supplier.email
-        to_name = contact.fullname if contact else supplier.company_name
-    else:
-        to_email = supplier.email
-        to_name = supplier.company_name
+        contact = db.execute(select(Contact).where(Contact.id == rfq.contact_id)).scalar_one_or_none()
 
-    subject = settings.RFQ_EMAIL_SUBJECT.format(
-        request_number=request.request_number
+    to_email = contact.email if contact and contact.email else supplier.email
+    to_name = contact.fullname if contact else supplier.company_name
+    system_settings = get_settings(db)
+
+    if not system_settings.rfq_email_template:
+        return None
+
+    subject = f"Request for Quotation — {rfq.rfq_number}"
+
+    context = {
+        "to_name": to_name,
+        "contact": contact,
+        "supplier": supplier,
+        "rfq": rfq,
+        "request": request,
+        "current_user": current_user,
+        "company": {
+            "email": system_settings.company_email,
+            "phone": system_settings.company_phone,
+            "logo_url": system_settings.company_logo_url,
+        },
+    }
+
+    body = render_template(
+        system_settings.rfq_email_template,
+        context,
     )
-
-    body = (
-        f"{settings.RFQ_EMAIL_GREETING.format(to_name=to_name)}\n\n"
-        f"{settings.RFQ_EMAIL_INTRO}\n\n"
-        f"RFQ Reference: {rfq.rfq_number}\n"
-        f"Response Deadline: {rfq.response_deadline.strftime('%d %B %Y')}\n\n"
-        f"{settings.RFQ_EMAIL_REQUIREMENTS}\n\n"
-    )
-
-    if rfq.notes:
-        body += f"Additional notes:\n{rfq.notes}\n\n"
-
-    body += (
-        f"{settings.RFQ_EMAIL_CLOSING}\n"
-        f"{current_user.fullname}\n"
-        f"{settings.COMPANY_NAME}\n"
-        f"{settings.COMPANY_EMAIL}\n"
-        f"{settings.COMPANY_PHONE}"
-    )
-
 
     return {
         "to": to_email,
-        "cc": settings.COMPANY_EMAIL,
+        "cc": system_settings.company_email,
         "subject": subject,
         "body": body,
         "rfq_number": rfq.rfq_number,

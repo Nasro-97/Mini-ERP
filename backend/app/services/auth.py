@@ -3,22 +3,31 @@ from sqlalchemy.orm import Session
 
 from app.core.security import verify_password, create_access_token
 from app.services.user import get_user_by_email
+from app.core.company_database import get_session_for_company
 
 
-def login_user(db:Session, email: EmailStr, password: str):
-    user = get_user_by_email(db ,email)
-
-    # User does not exist
-    if user is None:
+def login_user(company_code: str, email: EmailStr, password: str):
+    try:
+        db_generator = get_session_for_company(company_code)
+        db: Session = next(db_generator)
+    except ValueError:
         return None
 
-    # User is deactivated
-    if not user.is_active:
-        return None
+    try:
+        user = get_user_by_email(db, email)
 
-    # Password is wrong
-    if not verify_password(password, user.password_hash):
-        return None
+        if user is None:
+            return None
 
-    token = create_access_token(user.id)
-    return token
+        if not user.is_active:
+            return None
+
+        if not verify_password(password, user.password_hash):
+            return None
+
+        token = create_access_token(user.id, company_code)
+
+        return token
+
+    finally:
+        db.close()
