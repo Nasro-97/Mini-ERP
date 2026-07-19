@@ -56,8 +56,6 @@ def create_offer(db: Session, offer_data: OfferCreate, current_user: User) -> Of
     db.commit()
     db.refresh(offer)
 
-
-
     return offer
 
 

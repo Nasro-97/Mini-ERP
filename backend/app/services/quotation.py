@@ -3,12 +3,13 @@ from datetime import datetime, UTC
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
+from app.core.company_database import company_code
 from app.core.roles import has_procurement_access
 from app.models import Quotation, QuotationStatus, User, RFQStatus, RequestStatus
 from app.schemas import QuotationCreate, QuotationUpdate
 from app.services.rfq import get_rfq_by_id, _check_and_update_request_status, get_rfqs_by_request
 from app.services.request import get_request_by_id
-
+from app.services.document_counter import generate_document_number
 
 # create_quotation — get the RFQ first, copy supplier_id from it, change RFQ status to QUOTE_RECEIVED, then call _check_and_update_request_status from the RFQ service.
 def create_quotation(db: Session, quotation_data: QuotationCreate, current_user: User) -> Quotation| None:
@@ -34,7 +35,8 @@ def create_quotation(db: Session, quotation_data: QuotationCreate, current_user:
         select(func.count()).select_from(Quotation).where(Quotation.rfq_id == rfq.id)
     ).scalar() or 0
 
-    quotation_number = f"{rfq.rfq_number}-Q{existing_count + 1}"
+    company_code = db.info["company_code"]
+    quotation_number = generate_document_number(db, "quotation", company_code)
 
 
     quotation = Quotation(

@@ -3,12 +3,14 @@ from datetime import datetime, UTC
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
+
 from app.core.roles import has_procurement_access
 from app.models import RFQ, RFQStatus, RequestStatus, User, Supplier, Contact
 from app.schemas import RFQCreate, RFQUpdate
 from app.services.request import get_request_by_id
 from app.services.pdf_generator import render_template
 from app.services.settings import get_settings
+from app.services.document_counter import generate_document_number
 
 
 def create_rfq(db: Session, rfq_data: RFQCreate, current_user: User) -> RFQ | None:
@@ -46,7 +48,8 @@ def create_rfq(db: Session, rfq_data: RFQCreate, current_user: User) -> RFQ | No
         select(func.count()).select_from(RFQ).where(RFQ.request_id == request.id)
     ).scalar() or 0
 
-    rfq_number = f"{request.request_number}-RFQ-{existing_count + 1}"
+    company_code = db.info["company_code"]
+    rfq_number = generate_document_number(db, "rfq", company_code)
 
     rfq = RFQ(
         request_id=rfq_data.request_id,

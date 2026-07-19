@@ -36,6 +36,7 @@ def get_company_code_from_token(token: str = Depends(oauth2_scheme)) -> str:
 def get_db(company_code: str = Depends(get_company_code_from_token)):
     db_generator = get_session_for_company(company_code)
     db = next(db_generator)
+    db.info["company_code"] = company_code
 
     try:
         yield db

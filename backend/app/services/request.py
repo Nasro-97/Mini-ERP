@@ -11,6 +11,7 @@ from app.core.roles import is_cod, is_sales_manager, is_procurement_manager, is_
 from app.services.document_counter import generate_document_number
 
 
+
 PROCUREMENT_VISIBLE_STATUSES = [
     RequestStatus.APPROVED_FOR_SOURCING,
     RequestStatus.RFQ_IN_PROGRESS,
@@ -26,7 +27,8 @@ PROCUREMENT_VISIBLE_STATUSES = [
 
 
 def create_request(db: Session, request_data: RequestCreate, current_user: User) -> Request:
-    request_number = generate_document_number(db, "request", "company1")
+    company_code = db.info["company_code"]
+    request_number = generate_document_number(db, "request", company_code)
 
     request = Request(
         request_number=request_number,

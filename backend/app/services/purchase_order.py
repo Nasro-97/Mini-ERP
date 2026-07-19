@@ -15,8 +15,9 @@ from app.services.document_counter import generate_document_number
 
 
 def create_po(db: Session, po_data: PurchaseOrderCreate, current_user: User) -> PurchaseOrder | None:
-    # FOR NOW ONLY COMPANY 1 Later the frontend will send it
-    po_number = generate_document_number(db, "po", "company1")
+
+    company_code = db.info["company_code"]
+    po_number = generate_document_number(db, "po", company_code)
 
     offer_version = get_offer_version_by_id(db, po_data.offer_version_id)
     if offer_version is None: return None

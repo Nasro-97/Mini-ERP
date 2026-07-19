@@ -93,7 +93,7 @@ def reject_request( request_id: UUID, notes: str, db: Session = Depends(get_db),
 
 
 @router.patch("/{request_id}/close", response_model=RequestOutput, status_code=status.HTTP_200_OK)
-def reject_request( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Manager", "COD"]))):
+def close_request( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["Sales Manager", "COD"]))):
     request = request_service.close_request(db, request_id, current_user)
     if request is None:
         raise HTTPException(
@@ -116,7 +116,6 @@ def assign_procurement(request_id: UUID, assigned_user_id: UUID, db: Session = D
     return request
 
 
-# Delete request — only if DRAFT
 @router.delete("/{request_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_request( request_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(required_roles(["COD","Sales Specialist", "Sales Manager"]))):
     deleted = request_service.delete_request(db, request_id)
