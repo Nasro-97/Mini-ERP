@@ -1,3 +1,5 @@
+import base64
+import requests
 from fastapi import HTTPException, status
 from jinja2 import Environment, BaseLoader
 
@@ -21,6 +23,23 @@ def render_template(html_template: str, context: dict) -> str:
         )
 
 
+def image_url_to_data_uri(image_url: str | None) -> str | None:
+    if not image_url:
+        return None
+
+    try:
+        response = requests.get(image_url, timeout=15)
+        response.raise_for_status()
+
+        content_type = response.headers.get("content-type", "image/png")
+        encoded = base64.b64encode(response.content).decode("utf-8")
+
+        return f"data:{content_type};base64,{encoded}"
+
+    except Exception:
+        return None
+
+
 def html_to_pdf(html: str) -> bytes:
     try:
         from playwright.sync_api import sync_playwright
@@ -28,7 +47,10 @@ def html_to_pdf(html: str) -> bytes:
         with sync_playwright() as p:
             browser = p.chromium.launch()
             page = browser.new_page()
+            page.screenshot(path="debug-offer.png", full_page=True)
             page.set_content(html, wait_until="networkidle")
+
+            page.wait_for_timeout(3000)
 
             pdf_bytes = page.pdf(
                 format="A4",

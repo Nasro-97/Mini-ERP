@@ -10,9 +10,11 @@ from app.core.dependencies import get_current_user
 from app.models import User, Quotation, Supplier, PurchaseOrder, Request, DocumentType
 
 from app.services.settings import get_settings
-from app.services.pdf_generator import render_template, html_to_pdf
+from app.services.pdf_generator import render_template, html_to_pdf, image_url_to_data_uri
 from app.services.document_item import get_document_item_by_document
 from app.services.offer import get_offer_with_versions
+from app.services.google_drive import get_or_create_folder, upload_pdf_bytes
+from app.core.config import settings as app_settings
 
 
 router = APIRouter(prefix="/pdf", tags=["PDF"])
@@ -56,11 +58,7 @@ def generate_offer_pdf(offer_id: UUID, pdf_type: str, db: Session = Depends(get_
         )
 
     settings = get_settings(db)
-    company_logo_url = (
-        f"http://127.0.0.1:8000{settings.company_logo_url}"
-        if settings.company_logo_url
-        else None
-    )
+    company_logo_url = image_url_to_data_uri(settings.company_logo_url)
 
     if pdf_type == "technical":
         html_template = settings.technical_offer_template
@@ -93,6 +91,24 @@ def generate_offer_pdf(offer_id: UUID, pdf_type: str, db: Session = Depends(get_
     html = render_template(html_template, context)
     pdf_bytes = html_to_pdf(html)
 
+    company_code = db.info["company_code"]
+
+    company_folder = get_or_create_folder(
+        folder_name=company_code,
+        parent_folder_id=app_settings.GOOGLE_DRIVE_ROOT_FOLDER_ID,
+    )
+
+    request_folder = get_or_create_folder(
+        folder_name=request.request_number,
+        parent_folder_id=company_folder["id"],
+    )
+
+    upload_pdf_bytes(
+        pdf_bytes=pdf_bytes,
+        filename=f"{pdf_type}-offer-{offer.offer_number}.pdf",
+        parent_folder_id=request_folder["id"],
+    )
+
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
@@ -122,12 +138,7 @@ def generate_purchase_order_pdf( po_id: UUID, db: Session = Depends(get_db), cur
     )
 
     settings = get_settings(db)
-    company_logo_url = (
-        f"http://127.0.0.1:8000{settings.company_logo_url}"
-        if settings.company_logo_url
-        else None
-    )
-
+    company_logo_url = image_url_to_data_uri(settings.company_logo_url)
     context = {
         "document": {
             "title": "Purchase Order",
@@ -149,10 +160,36 @@ def generate_purchase_order_pdf( po_id: UUID, db: Session = Depends(get_db), cur
     html = render_template(settings.po_template, context)
     pdf_bytes = html_to_pdf(html)
 
+    company_code = db.info["company_code"]
+
+    company_folder = get_or_create_folder(
+        folder_name=company_code,
+        parent_folder_id=app_settings.GOOGLE_DRIVE_ROOT_FOLDER_ID,
+    )
+
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found",
+        )
+
+    request_folder = get_or_create_folder(
+        folder_name=request.request_number,
+        parent_folder_id=company_folder["id"],
+    )
+
+    filename = f"{po.po_number}.pdf"
+
+    upload_pdf_bytes(
+        pdf_bytes=pdf_bytes,
+        filename=filename,
+        parent_folder_id=request_folder["id"],
+    )
+
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f'inline; filename="purchase-order-{po.po_number}.pdf"'
+            "Content-Disposition": f'inline; filename="{filename}"'
         },
     )
